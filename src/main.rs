@@ -4,8 +4,15 @@ use crate::server::Server;
 extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
+extern crate mime;
+extern crate chrono;
+extern crate iso3166_1;
+extern crate iata_types;
 
 mod server;
+mod services;
+mod models;
+
 
 fn main() -> io::Result<()> {
     let host = "127.0.0.1";

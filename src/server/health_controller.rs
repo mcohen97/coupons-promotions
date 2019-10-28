@@ -1,6 +1,4 @@
 use actix_web::HttpResponse;
-use crate::server::api_error::APIError;
-
 pub struct HealthController;
 
 impl HealthController {

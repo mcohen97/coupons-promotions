@@ -1,4 +1,6 @@
-mod demographic_data;
+mod demographics;
+pub use demographics::Demographics;
 
 
-pub use demographic_data::DemographicData;
+
+// type alias to use in multiple places

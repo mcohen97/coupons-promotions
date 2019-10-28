@@ -7,13 +7,13 @@ use std::str::FromStr;
 const INVALID_COUNTRY: &str = "Invalid country code (Must be iso3166_1)";
 const INVALID_DATE: &str = "Invalid date (must be month/day/year)";
 
-pub struct DemographicData<'a> {
+pub struct Demographics<'a> {
     country: CountryCode<'a>,
     city: CityCode,
     birth_date: NaiveDate
 }
 
-impl<'a> DemographicData<'a> {
+impl<'a> Demographics<'a> {
     pub fn new(country: &str, city: &str, birth_date: &str) -> ApiResult<Self> {
         let country = iso3166_1::alpha2(&country)
         .or(iso3166_1::alpha3(&country))
@@ -22,7 +22,7 @@ impl<'a> DemographicData<'a> {
         let city = CityCode::from_str(&city)?;
         let birth_date = Self::parse_date(&birth_date)?;
 
-        Ok(DemographicData {country, city, birth_date })
+        Ok(Demographics {country, city, birth_date })
     }
 
     fn parse_date(date: &str) -> ApiResult<NaiveDate> {
@@ -37,8 +37,16 @@ impl<'a> DemographicData<'a> {
         NaiveDate::from_ymd_opt(year, month, day).ok_or(INVALID_DATE.into())
     }
 
-    pub fn publish_data(&self) -> ApiResult<()> {
-        Ok(())
+    pub fn get_country_code(&self) -> &str {
+        self.country.alpha3
+    }
+
+    pub fn get_city_code(&self) -> CityCode {
+        self.city
+    }
+
+    pub fn get_birth_date(&self) -> NaiveDate {
+        self.birth_date
     }
 }
 
@@ -48,33 +56,34 @@ mod tests {
     const VALID_COUNTRY: &str = "ARG";
     const VALID_CITY: &str = "MDZ";
     const VALID_DATE: &str = "05/04/1998";
+
     #[test]
     fn valid_data() {
-        let result = DemographicData::new(VALID_COUNTRY, VALID_CITY, VALID_DATE);
+        let result = Demographics::new(VALID_COUNTRY, VALID_CITY, VALID_DATE);
         assert!(result.is_ok());
     }
 
      #[test]
     fn invalid_country_code() {
-        let result = DemographicData::new("XYZ", VALID_CITY, VALID_DATE);
+        let result = Demographics::new("XYZ", VALID_CITY, VALID_DATE);
         assert!(result.is_err());
     }
 
     #[test]
     fn country_name_instead_of_code() {
-        let result = DemographicData::new("Argentina", VALID_CITY, VALID_DATE);
+        let result = Demographics::new("Argentina", VALID_CITY, VALID_DATE);
         assert!(result.is_err());
     }
 
     #[test]
     fn invalid_city_code() {
-        let result = DemographicData::new(VALID_COUNTRY,"ewew" , VALID_DATE);
+        let result = Demographics::new(VALID_COUNTRY,"ewew" , VALID_DATE);
         assert!(result.is_err());
     }
 
     #[test]
     fn city_name_instead_of_code() {
-        let result = DemographicData::new("Mendoza", VALID_CITY, VALID_DATE);
+        let result = Demographics::new("Mendoza", VALID_CITY, VALID_DATE);
         assert!(result.is_err());
     }
 

@@ -1,6 +1,7 @@
 use actix_web::HttpResponse;
+use actix_web::ResponseError;
+use core::fmt::Display;
 use iata_types::CityCodeParseError;
-use std::error::Error;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct APIError {
@@ -10,6 +11,18 @@ pub struct APIError {
 impl Into<HttpResponse> for APIError {
     fn into(self) -> HttpResponse {
         HttpResponse::BadRequest().json(self)
+    }
+}
+
+impl ResponseError for APIError {
+    fn error_response(&self) -> HttpResponse {
+        HttpResponse::BadRequest().json(self)
+    }
+}
+
+impl Display for APIError {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
+        f.write_str(&self.message)
     }
 }
 

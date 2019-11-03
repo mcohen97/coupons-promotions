@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+    <data-source source="LOCAL" name="eval-dev@localhost" uuid="5f46be72-c5f3-4ea5-95d1-d195a8eb411a">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:5432/eval-dev</jdbc-url>
+    </data-source>
+    <data-source source="LOCAL" name="Coupons_development@localhost" uuid="02a96871-9e5a-4027-be75-558e70794fcc">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:5432/Coupons_development</jdbc-url>
+    </data-source>
+  </component>
+</project>

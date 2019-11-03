@@ -2,6 +2,7 @@ use actix_web::HttpResponse;
 use actix_web::ResponseError;
 use core::fmt::Display;
 use iata_types::CityCodeParseError;
+use std::error::Error;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct APIError {
@@ -43,5 +44,11 @@ impl From<&'static str> for APIError {
 impl From<CityCodeParseError> for APIError {
     fn from(_error: CityCodeParseError) -> APIError {
         "Invalid city code (must be AIATA)".into()
+    }
+}
+
+impl From<diesel::result::Error> for APIError {
+    fn from(e: diesel::result::Error) -> Self {
+        APIError { message: e.description().into() }
     }
 }

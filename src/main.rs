@@ -2,7 +2,6 @@
 // usful in dev mode
 use std::io;
 use crate::server::{Server, ServerConfig};
-use std::error::Error;
 
 #[macro_use]
 extern crate diesel;
@@ -15,6 +14,7 @@ extern crate iso3166_1;
 extern crate iata_types;
 extern crate http;
 extern crate dotenv;
+extern crate evalexpr;
 
 mod server;
 mod services;

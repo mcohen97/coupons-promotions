@@ -20,3 +20,4 @@ http = "0.1"
 diesel = { version = "1.4.2", features = ["postgres","uuidv07", "r2d2", "chrono"] }
 r2d2 = "0.8"
 dotenv = "0.15.0"
+evalexpr = "5"

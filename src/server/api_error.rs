@@ -3,6 +3,7 @@ use actix_web::ResponseError;
 use core::fmt::Display;
 use iata_types::CityCodeParseError;
 use std::error::Error;
+use evalexpr::EvalexprError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct APIError {
@@ -50,5 +51,11 @@ impl From<CityCodeParseError> for APIError {
 impl From<diesel::result::Error> for APIError {
     fn from(e: diesel::result::Error) -> Self {
         APIError { message: e.description().into() }
+    }
+}
+
+impl From<evalexpr::EvalexprError> for APIError {
+    fn from(err: EvalexprError) -> Self {
+        err.to_string().into()
     }
 }

@@ -15,8 +15,8 @@ pub struct EvaluationController;
 
 impl EvaluationController {
     pub fn post(path: web::Path<String>, data: Json<EvaluationIn>, _pool: web::Data<Pool>, req: HttpRequest) -> ApiResult<HttpResponse> {
-        use crate::schema::promotions::dsl::*;;
-        let eval_service = EvaluationService::new();
+        let con = _pool.get().unwrap();
+        let eval_service = EvaluationService::new(con);
         let demo_service = DemographyService::new();
 
         let data = data.into_inner();
@@ -33,13 +33,13 @@ impl EvaluationController {
                 birth_date: demography.birth_date,
             })?;
         }
-        /*
+/*
         let con = pool.get().unwrap();
         let post = Promotion::default();
         let inserted: Promotion = diesel::insert_into(promotions)
             .values(&post)
             .get_result(&con)?;
-            */
+*/
         Ok(HttpResponse::Ok().finish())
     }
 

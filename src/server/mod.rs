@@ -4,7 +4,7 @@ mod health_controller;
 
 
 use actix_web::{error, middleware, web, App, HttpResponse, HttpServer};
-pub use api_error::{APIError};
+pub use api_error::{ApiError};
 use evaluation_controller::{EvaluationController};
 use health_controller::HealthController;
 use std::io;
@@ -12,7 +12,7 @@ use diesel::r2d2::ConnectionManager;
 use diesel::PgConnection;
 use crate::models;
 
-pub type ApiResult<T> = Result<T, APIError>;
+pub type ApiResult<T> = Result<T, ApiError>;
 
 pub struct Server {
     config: ServerConfig
@@ -41,7 +41,7 @@ impl Server {
                         .error_handler(|err, _req| {
                             error::InternalError::from_response(
                                 err,
-                                HttpResponse::BadRequest().json(APIError::from("Wrong format")),
+                                HttpResponse::BadRequest().json(ApiError::from("Wrong format")),
                             )
                             .into()
                         }),

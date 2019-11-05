@@ -1,4 +1,4 @@
-use crate::server::{ApiResult, APIError}; 
+use crate::server::{ApiResult, ApiError};
 use chrono::NaiveDate;
 use iso3166_1::CountryCode;
 use iata_types::CityCode;
@@ -17,7 +17,7 @@ impl<'a> Demographics<'a> {
     pub fn new(country: &str, city: &str, birth_date: &str) -> ApiResult<Self> {
         let country = iso3166_1::alpha2(&country)
         .or(iso3166_1::alpha3(&country))
-        .ok_or::<APIError>(INVALID_COUNTRY.into())?;
+        .ok_or::<ApiError>(INVALID_COUNTRY.into())?;
 
         let city = CityCode::from_str(&city)?;
         let birth_date = Self::parse_date(&birth_date)?;
@@ -30,9 +30,9 @@ impl<'a> Demographics<'a> {
         if split.len() != 3 {
             return Err(INVALID_DATE.into());
         }
-        let month = split[0].parse().map_err(|_| APIError::from(INVALID_DATE))?;
-        let day = split[1].parse().map_err(|_| APIError::from(INVALID_DATE))?;
-        let year = split[2].parse().map_err(|_| APIError::from(INVALID_DATE))?;
+        let month = split[0].parse().map_err(|_| ApiError::from(INVALID_DATE))?;
+        let day = split[1].parse().map_err(|_| ApiError::from(INVALID_DATE))?;
+        let year = split[2].parse().map_err(|_| ApiError::from(INVALID_DATE))?;
 
         NaiveDate::from_ymd_opt(year, month, day).ok_or(INVALID_DATE.into())
     }

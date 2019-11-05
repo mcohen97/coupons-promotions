@@ -32,7 +32,6 @@ impl PromotionExpression {
         context.set_value("valid_transaction".into(), Value::Boolean(true))?;
 
         let result = self.ast.eval_boolean_with_context_mut(&mut context)?;
-
         Ok(result)
     }
 }

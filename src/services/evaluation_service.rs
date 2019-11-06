@@ -1,18 +1,20 @@
 #[allow(unused_variables)]
 use crate::server::ApiResult;
 use std::collections::HashMap;
-use crate::models::{Connection, Promotion};
+use crate::models::{Connection, Promotion, PromotionRepo};
 
-pub struct EvaluationService {
-    conn: Connection
+pub struct EvaluationService<'a> {
+    repo: PromotionRepo<'a>
 }
 
-impl EvaluationService {
-    pub fn new(conn: Connection) -> Self {
-        Self { conn }
+impl<'a> EvaluationService<'a> {
+    pub fn new(repo: PromotionRepo<'a>) -> Self {
+        Self { repo }
     }
 
     pub fn evaluate_promotion(&self, promotion_id: i32, attributes: HashMap<String, f64>) -> ApiResult<EvaluationResult> {
+        let promotion = self.repo.find(promotion_id)?;
+        
         unimplemented!()
     }
 }

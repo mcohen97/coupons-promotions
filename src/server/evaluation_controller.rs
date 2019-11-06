@@ -16,7 +16,8 @@ pub struct EvaluationController;
 impl EvaluationController {
     pub fn post(path: web::Path<String>, data: Json<EvaluationIn>, _pool: web::Data<Pool>, req: HttpRequest) -> ApiResult<HttpResponse> {
         let con = _pool.get().unwrap();
-        let eval_service = EvaluationService::new(con);
+        let repo = PromotionRepo::new(&con);
+        let eval_service = EvaluationService::new(repo);
         let demo_service = DemographyService::new();
 
         let data = data.into_inner();

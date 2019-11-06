@@ -68,8 +68,8 @@ impl From<evalexpr::EvalexprError> for ApiError {
 impl From<diesel::result::Error> for ApiError {
     fn from(e: diesel::result::Error) -> Self {
         match e {
-            diesel::NotFound => "Not found",
-            _ => "Data access error"
-        }.into()
+            diesel::NotFound => "Not found".into(),
+            _ => ApiError::InternalError(Cow::from("Data access error"))
+        }
     }
 }

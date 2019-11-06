@@ -4,10 +4,12 @@ mod expression_parser;
 #[macro_use]
 mod create_hashmap;
 mod promotion_repo;
+mod new_promotion;
 
 pub use demographics::*;
 pub use promotion::*;
 pub use promotion_repo::*;
+pub use new_promotion::*;
 
 use diesel::{r2d2::ConnectionManager, PgConnection};
 use r2d2::PooledConnection;

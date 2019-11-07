@@ -40,8 +40,8 @@ impl Server {
                         .content_type(|mime| mime == mime::APPLICATION_JSON)
                         .error_handler(|err, _req| {
                             error::InternalError::from_response(
-                                err,
-                                HttpResponse::BadRequest().json(ApiError::from("Wrong format")),
+                                "",
+                                HttpResponse::BadRequest().json(ApiError::from(format!("Wrong format: {}", err))),
                             )
                             .into()
                         }),
@@ -54,6 +54,7 @@ impl Server {
         })
         .bind(format!("{}:{}", &self.config.domain, &self.config.port))?
         .run()
+            .and_then(|_| Ok(println!("Server has started")))
     }
 
     fn generate_database_url(&self) -> String {

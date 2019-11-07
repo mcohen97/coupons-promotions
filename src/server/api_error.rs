@@ -2,11 +2,23 @@ use actix_web::HttpResponse;
 use actix_web::ResponseError;
 use core::fmt::Display;
 use iata_types::CityCodeParseError;
-use std::error::Error;
 use evalexpr::EvalexprError;
 use std::borrow::Cow;
+use std::error::Error;
 
 type Message = Cow<'static, str>;
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ErrorJson {
+    error: Cow<'static, str>
+}
+
+impl ErrorJson {
+    pub fn from_message<T>(msg: T) -> ErrorJson
+        where T: Into<Message> {
+        ErrorJson { error: msg.into() }
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ApiError {
@@ -17,8 +29,8 @@ pub enum ApiError {
 impl Into<HttpResponse> for ApiError {
     fn into(self) -> HttpResponse {
         match self {
-            ApiError::BadRequest(msg) => HttpResponse::BadRequest().json(msg),
-            ApiError::InternalError(msg) => HttpResponse::InternalServerError().json(msg)
+            ApiError::BadRequest(msg) => HttpResponse::BadRequest().json(ErrorJson::from_message(msg)),
+            ApiError::InternalError(msg) => HttpResponse::InternalServerError().json(ErrorJson::from_message(msg))
         }
     }
 }
@@ -26,8 +38,8 @@ impl Into<HttpResponse> for ApiError {
 impl ResponseError for ApiError {
     fn error_response(&self) -> HttpResponse {
         match self {
-            ApiError::BadRequest(msg) => HttpResponse::BadRequest().json(msg),
-            ApiError::InternalError(msg) => HttpResponse::InternalServerError().json(msg)
+            ApiError::BadRequest(msg) => HttpResponse::BadRequest().json(ErrorJson::from_message(msg.to_string())),
+            ApiError::InternalError(msg) => HttpResponse::InternalServerError().json(ErrorJson::from_message(msg.to_string()))
         }
     }
 }
@@ -35,8 +47,8 @@ impl ResponseError for ApiError {
 impl Display for ApiError {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
         match self {
-            ApiError::BadRequest(msg) => f.write_str(msg),
-            ApiError::InternalError(msg) => f.write_str(msg)
+            ApiError::BadRequest(msg) => f.write_str(&serde_json::to_string_pretty(&ErrorJson::from_message(msg.to_string())).unwrap()),
+            ApiError::InternalError(msg) => f.write_str(&serde_json::to_string_pretty(&ErrorJson::from_message(msg.to_string())).unwrap())
         }
     }
 }
@@ -60,8 +72,8 @@ impl From<CityCodeParseError> for ApiError {
 }
 
 impl From<evalexpr::EvalexprError> for ApiError {
-    fn from(err: EvalexprError) -> Self {
-        err.to_string().into()
+    fn from(_: EvalexprError) -> Self {
+        ApiError::BadRequest("Promotion code is invalid".into())
     }
 }
 
@@ -71,5 +83,11 @@ impl From<diesel::result::Error> for ApiError {
             diesel::NotFound => "Not found".into(),
             _ => ApiError::InternalError(Cow::from("Data access error"))
         }
+    }
+}
+
+impl From<std::time::SystemTimeError> for ApiError {
+    fn from(e: std::time::SystemTimeError) -> Self {
+        ApiError::InternalError(Cow::from(e.to_string()))
     }
 }

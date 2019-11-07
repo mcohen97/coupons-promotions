@@ -13,36 +13,19 @@ pub struct Promotion {
     pub organization_id: i32,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub enum PromotionType {
     Discount,
     Coupon,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub enum PromotionReturn {
     Percentage(f64),
     Fixed(f64)
 }
 
 impl Promotion {
-    pub fn new(
-        name: String,
-        code: String,
-        active: bool,
-        p_return: PromotionReturn,
-        p_type: PromotionType,
-        organization_id: i32, ) -> Self {
-        let (return_type, return_value) = match p_return {
-            PromotionReturn::Percentage(val) => ("percentage".into(), val),
-            PromotionReturn::Fixed(val) => ("fixed".into(), val)
-        };
-        let type_ = match p_type {
-            PromotionType::Coupon => "coupon".into(),
-            PromotionType::Discount => "discount".into()
-        };
-
-        Promotion {id: 0, name, code, active, return_value, return_type, type_, organization_id}
-    }
-
     pub fn get_type(&self) -> PromotionType {
         match self.type_.as_ref() {
             "discount" => PromotionType::Discount,
@@ -64,11 +47,5 @@ impl PartialEq for Promotion {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum EvaluationResult {
-    PromotionDoesntApply,
-    PromotionApplies { discount_type: String },
 }
 

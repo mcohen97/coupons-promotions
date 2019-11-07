@@ -3,32 +3,32 @@ use crate::server::{ApiResult, ApiError};
 use diesel::prelude::*;
 use crate::schema::promotions::dsl::promotions;
 
-pub struct PromotionRepo<'a> {
-    conn: &'a Connection
+pub struct PromotionRepo {
+    conn: Box<Connection>
 }
 
-impl<'a> PromotionRepo<'a> {
-    pub fn new(conn: &'a Connection) -> Self {
+impl PromotionRepo {
+    pub fn new(conn: Box<Connection>) -> Self {
         PromotionRepo { conn }
     }
 
     pub fn get(&self) -> ApiResult<Vec<Promotion>> {
-        Ok(promotions.load(self.conn)?)
+        Ok(promotions.load(&*self.conn)?)
     }
 
     pub fn find(&self, id: i32) -> ApiResult<Promotion> {
-        Ok(promotions.find(id).first::<Promotion>(self.conn)?)
+        Ok(promotions.find(id).first::<Promotion>(&*self.conn)?)
     }
 
     pub fn create(&self, promo: &NewPromotion) -> ApiResult<Promotion> {
         Ok(diesel::insert_into(promotions)
             .values(promo)
-            .get_result(self.conn)?)
+            .get_result(&*self.conn)?)
     }
 
     pub fn delete(&self, id: i32) -> ApiResult<bool> {
         let find = promotions.find(id);
-        let delete = diesel::delete(find).execute(self.conn);
+        let delete = diesel::delete(find).execute(&*self.conn);
 
         match delete {
             Err(diesel::NotFound) => Ok(false),

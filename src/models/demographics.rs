@@ -3,6 +3,7 @@ use chrono::NaiveDate;
 use iso3166_1::CountryCode;
 use iata_types::CityCode;
 use std::str::FromStr;
+use serde::ser::{Serialize, Serializer, SerializeStruct};
 
 const INVALID_COUNTRY: &str = "Invalid country code (Must be iso3166_1)";
 const INVALID_DATE: &str = "Invalid date (must be month/day/year)";
@@ -10,19 +11,19 @@ const INVALID_DATE: &str = "Invalid date (must be month/day/year)";
 pub struct Demographics<'a> {
     country: CountryCode<'a>,
     city: CityCode,
-    birth_date: NaiveDate
+    birth_date: NaiveDate,
 }
 
 impl<'a> Demographics<'a> {
     pub fn new(country: &str, city: &str, birth_date: &str) -> ApiResult<Self> {
         let country = iso3166_1::alpha2(&country)
-        .or(iso3166_1::alpha3(&country))
-        .ok_or::<ApiError>(INVALID_COUNTRY.into())?;
+            .or(iso3166_1::alpha3(&country))
+            .ok_or::<ApiError>(INVALID_COUNTRY.into())?;
 
         let city = CityCode::from_str(&city)?;
         let birth_date = Self::parse_date(&birth_date)?;
 
-        Ok(Demographics {country, city, birth_date })
+        Ok(Demographics { country, city, birth_date })
     }
 
     fn parse_date(date: &str) -> ApiResult<NaiveDate> {
@@ -50,9 +51,28 @@ impl<'a> Demographics<'a> {
     }
 }
 
+impl<'a> Serialize for Demographics<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error> where
+        S: Serializer {
+        let mut state = serializer.serialize_struct("SerializedDemographics", 3)?;
+        state.serialize_field("country", self.get_country_code())?;
+        state.serialize_field("city", self.get_city_code().as_str())?;
+        state.serialize_field("birth_date", &self.get_birth_date().to_string())?;
+        state.end()
+    }
+}
+
+#[derive(Serialize)]
+struct SerializedDemographics {
+    pub country: String,
+    pub city: String,
+    pub birth_date: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
     const VALID_COUNTRY: &str = "ARG";
     const VALID_CITY: &str = "MDZ";
     const VALID_DATE: &str = "05/04/1998";
@@ -63,7 +83,7 @@ mod tests {
         assert!(result.is_ok());
     }
 
-     #[test]
+    #[test]
     fn invalid_country_code() {
         let result = Demographics::new("XYZ", VALID_CITY, VALID_DATE);
         assert!(result.is_err());
@@ -77,7 +97,7 @@ mod tests {
 
     #[test]
     fn invalid_city_code() {
-        let result = Demographics::new(VALID_COUNTRY,"ewew" , VALID_DATE);
+        let result = Demographics::new(VALID_COUNTRY, "ewew", VALID_DATE);
         assert!(result.is_err());
     }
 
@@ -86,5 +106,4 @@ mod tests {
         let result = Demographics::new("Mendoza", VALID_CITY, VALID_DATE);
         assert!(result.is_err());
     }
-
 }

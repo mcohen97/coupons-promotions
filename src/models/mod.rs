@@ -10,6 +10,7 @@ pub use demographics::*;
 pub use promotion::*;
 pub use promotion_repo::*;
 pub use new_promotion::*;
+pub use expression_parser::*;
 
 use diesel::{r2d2::ConnectionManager, PgConnection};
 use r2d2::PooledConnection;

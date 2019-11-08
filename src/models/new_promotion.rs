@@ -1,7 +1,8 @@
 use crate::schema::promotions;
 use crate::models::{PromotionReturn, PromotionType};
+use crate::server::ApiResult;
 
-#[derive(Insertable)]
+#[derive(Insertable, Deserialize)]
 #[table_name="promotions"]
 pub struct NewPromotion<'a> {
     pub code: &'a str,

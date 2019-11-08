@@ -12,6 +12,7 @@ use diesel::RunQueryDsl;
 use std::error::Error;
 use chrono::Utc;
 use std::time::SystemTime;
+use std::rc::Rc;
 
 
 pub struct EvaluationController;
@@ -58,7 +59,7 @@ impl EvaluationController {
 
 
     fn setup_services(pool: Data<Pool>) -> (EvaluationService, DemographyService) {
-        let con = Box::new(pool.get().unwrap());
+        let con = Rc::new(pool.get().unwrap());
         let repo = Box::new(PromotionRepo::new(con));
         let eval_service = EvaluationService::new(repo);
         let demo_service = DemographyService::new();

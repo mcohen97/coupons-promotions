@@ -1,0 +1,1 @@
+ALTER TABLE promotions DROP organization_id;

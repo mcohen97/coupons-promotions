@@ -1,6 +1,7 @@
 mod api_error;
 mod evaluation_controller;
 mod health_controller;
+mod promotions_controller;
 
 
 use actix_web::{error, middleware, web, App, HttpResponse, HttpServer};
@@ -11,6 +12,7 @@ use std::io;
 use diesel::r2d2::ConnectionManager;
 use diesel::PgConnection;
 use crate::models;
+use crate::server::promotions_controller::PromotionsController;
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
@@ -50,6 +52,10 @@ impl Server {
                 .service(
                     web::resource("/evaluations/{code}")
                         .route(web::post().to(EvaluationController::post)),
+                )
+                .service(
+                    web::resource("/promotions")
+                        .route(web::post().to(PromotionsController::post))
                 )
         })
         .bind(format!("{}:{}", &self.config.domain, &self.config.port))?

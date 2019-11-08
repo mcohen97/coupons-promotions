@@ -1,4 +1,10 @@
 table! {
+    organizations (id) {
+        id -> Int4,
+    }
+}
+
+table! {
     promotions (id) {
         id -> Int4,
         code -> Varchar,
@@ -11,3 +17,10 @@ table! {
         organization_id -> Int4,
     }
 }
+
+joinable!(promotions -> organizations (organization_id));
+
+allow_tables_to_appear_in_same_query!(
+    organizations,
+    promotions,
+);

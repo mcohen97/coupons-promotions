@@ -13,13 +13,15 @@ pub struct Promotion {
     pub organization_id: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Copy, Clone)]
+#[serde(rename_all = "camelCase")]
 pub enum PromotionType {
     Discount,
     Coupon,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum PromotionReturn {
     Percentage(f64),
     Fixed(f64)

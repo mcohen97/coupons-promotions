@@ -15,7 +15,7 @@ extern crate iata_types;
 extern crate http;
 extern crate dotenv;
 extern crate evalexpr;
-
+extern crate env_logger;
 mod server;
 mod services;
 mod models;
@@ -32,6 +32,8 @@ fn main() -> io::Result<()> {
     let db_name = std::env::var("DB_NAME").expect("DB_NAME missing");
 
     println!("Server is staring at {}:{}", &domain, &port);
+    std::env::set_var("RUST_LOG", "actix_web=info,actix_server=info");
+    env_logger::init();
     let config = ServerConfig { domain, port, db_host, db_name, db_user, db_password };
     let server = Server::new(config);
     server.start()?;

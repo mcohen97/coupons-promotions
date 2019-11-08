@@ -1,9 +1,10 @@
 mod demographics;
 mod promotion;
+mod organization;
 mod expression_parser;
 #[macro_use]
-mod create_hashmap;
 mod promotion_repo;
+mod organization_repo;
 mod new_promotion;
 
 pub use demographics::*;

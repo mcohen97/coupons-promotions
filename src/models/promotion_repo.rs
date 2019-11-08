@@ -2,13 +2,14 @@ use crate::models::{Connection, Promotion, NewPromotion};
 use crate::server::{ApiResult, ApiError};
 use diesel::prelude::*;
 use crate::schema::promotions::dsl::promotions;
+use std::rc::Rc;
 
 pub struct PromotionRepo {
-    conn: Box<Connection>
+    conn: Rc<Connection>
 }
 
 impl PromotionRepo {
-    pub fn new(conn: Box<Connection>) -> Self {
+    pub fn new(conn: Rc<Connection>) -> Self {
         PromotionRepo { conn }
     }
 
@@ -53,21 +54,21 @@ mod tests {
         let pool: models::Pool = r2d2::Pool::builder()
             .build(manager)
             .expect("Failed to create pool.");
-        let conn = pool.get().unwrap();
-        let repo = PromotionRepo::new(&conn);
+        let conn = Rc::new(pool.get().unwrap());
+        let repo = PromotionRepo::new(conn);
         let new_promo = build_promo();
 
         let promo = repo.create(&new_promo).unwrap();
         assert_ne!(0, promo.id);
 
-        let fetched = repo.find(promo.id).unwrap().unwrap();
+        let fetched = repo.find(promo.id).unwrap();
         assert_eq!(promo, fetched);
         assert_eq!(promo.name, fetched.name);
 
         let deleted = repo.delete(promo.id).unwrap();
         !(deleted);
 
-        let still_exists = repo.find(promo.id).unwrap().is_some();
+        let still_exists = repo.find(promo.id).err().is_some();
         assert!(!still_exists);
     }
 
@@ -79,8 +80,8 @@ mod tests {
         let pool: models::Pool = r2d2::Pool::builder()
             .build(manager)
             .expect("Failed to create pool.");
-        let conn = pool.get().unwrap();
-        let repo = PromotionRepo::new(&conn);
+        let conn = Rc::new(pool.get().unwrap());
+        let repo = PromotionRepo::new(conn);
         let new_promo = build_promo();
 
         let created = vec![repo.create(&new_promo).unwrap(); 10];

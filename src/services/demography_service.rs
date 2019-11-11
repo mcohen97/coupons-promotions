@@ -1,4 +1,3 @@
-use crate::models::Demographics;
 use crate::server::ApiResult;
 
 pub struct DemographyService;
@@ -8,7 +7,7 @@ impl DemographyService {
         DemographyService {}
     }
 
-    pub fn publish(&self, data: DemographyIn) -> ApiResult<()> {
+    pub fn publish(&self, _data: DemographyIn) -> ApiResult<()> {
         unimplemented!()
     }
 }

@@ -2,7 +2,7 @@ mod api_error;
 mod evaluation_controller;
 mod health_controller;
 mod promotions_controller;
-
+mod model_in;
 
 use actix_web::{error, middleware, web, App, HttpResponse, HttpServer};
 pub use api_error::ApiError;
@@ -13,6 +13,8 @@ use diesel::r2d2::ConnectionManager;
 use diesel::PgConnection;
 use crate::models;
 use crate::server::promotions_controller::PromotionsController;
+use crate::services::MessageListener;
+use actix::ContextFutureSpawner;
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
@@ -26,12 +28,16 @@ impl Server {
     }
 
     pub fn start(&self) -> io::Result<()> {
+        actix::System::new("sys");
         // create db connection pool
         let manager = ConnectionManager::<PgConnection>::new(self.generate_database_url());
         let pool: models::Pool = r2d2::Pool::builder()
             .build(manager)
             .expect("Failed to create pool.");
 
+        let m = MessageListener::new("amqp://lyepjabq:DDt-OwA5B7XOCswfKgthGwA59yA1P73w@prawn.rmq.cloudamqp.com/lyepjabq");
+        let f = m.start();
+        actix::spawn(f);
 
         HttpServer::new(move || {
             App::new()
@@ -70,7 +76,6 @@ impl Server {
         })
             .bind(format!("{}:{}", &self.config.domain, &self.config.port))?
             .run()
-            .and_then(|_| Ok(println!("Server has started")))
     }
 
     fn generate_database_url(&self) -> String {

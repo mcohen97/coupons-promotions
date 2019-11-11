@@ -91,3 +91,9 @@ impl From<std::time::SystemTimeError> for ApiError {
         ApiError::InternalError(Cow::from(e.to_string()))
     }
 }
+
+impl From<lapin::Error> for ApiError {
+    fn from(e: lapin::Error) -> Self {
+        ApiError::InternalError(Cow::Owned(e.description().to_string()))
+    }
+}

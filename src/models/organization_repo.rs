@@ -15,7 +15,7 @@ impl OrganizationRepo {
             .values(&Organization { id })
             .get_result(&*self.conn)?;
 
-        Ok((true))
+        Ok(true)
     }
 
     pub fn delete(&self, id: i32) -> ApiResult<(bool)> {

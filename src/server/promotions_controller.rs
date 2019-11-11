@@ -1,9 +1,9 @@
-use futures::Future;
 use actix_web::{web, HttpResponse};
-use crate::server::{ApiError, ApiResult};
+use crate::server::{ApiResult};
 use actix_web::web::Json;
-use crate::models::{NewPromotion, Pool, Promotion, PromotionType, PromotionReturn, PromotionRepo, PromotionExpression};
+use crate::models::{NewPromotion, Pool, Promotion, PromotionRepo, PromotionExpression};
 use std::rc::Rc;
+use crate::server::model_in::*;
 
 pub struct PromotionsController;
 
@@ -22,7 +22,7 @@ impl PromotionsController {
         let id = id.into_inner();
 
         let mut promotion = repo.find(id)?;
-        let PromotionIn { name, code: code, return_type, return_value, promotion_type, organization_id } = data.into_inner();
+        let PromotionIn { name, code, return_type, return_value, promotion_type, organization_id } = data.into_inner();
         promotion = Promotion { name, code: code.to_lowercase(), return_type: return_type.to_string(), return_value, type_: promotion_type.to_string(), organization_id, ..promotion };
         Self::validate_code(&promotion.code)?;
         repo.update(&promotion)?;
@@ -77,34 +77,3 @@ impl PromotionsController {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PromotionIn {
-    pub code: String,
-    pub name: String,
-    pub return_type: ReturnTypesIn,
-    pub return_value: f64,
-    pub promotion_type: PromotionType,
-    pub organization_id: i32,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub enum ReturnTypesIn {
-    Percentage,
-    Fixed,
-}
-
-impl ReturnTypesIn {
-    pub fn get_return(&self, value: f64) -> PromotionReturn {
-        match self {
-            ReturnTypesIn::Percentage => PromotionReturn::Percentage(value),
-            ReturnTypesIn::Fixed => PromotionReturn::Fixed(value)
-        }
-    }
-}
-
-impl ReturnTypesIn {
-    fn to_string(&self) -> String {
-        serde_json::to_string_pretty(&self).unwrap()
-    }
-}

@@ -1,5 +1,4 @@
 use crate::schema::promotions;
-use crate::server::ApiResult;
 
 #[derive(Debug, Serialize, Deserialize, Queryable, Insertable, AsChangeset, Clone)]
 #[table_name = "promotions"]

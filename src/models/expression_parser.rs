@@ -9,7 +9,7 @@ pub struct PromotionExpression {
 
 impl PromotionExpression {
     pub fn parse(code: &str) -> ApiResult<Self> {
-        debug_assert_eq!(code, code.to_lowercase()); // Code must be all lower case
+        debug_assert_eq!(code, code.to_lowercase(), "Code must be lowercase"); // Code must be all lower case
         let expr = Self::transform_expression(code);
         let ast = build_operator_tree(&expr)?;
 

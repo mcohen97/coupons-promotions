@@ -5,8 +5,8 @@ mod promotions_controller;
 
 
 use actix_web::{error, middleware, web, App, HttpResponse, HttpServer};
-pub use api_error::{ApiError};
-use evaluation_controller::{EvaluationController};
+pub use api_error::ApiError;
+use evaluation_controller::EvaluationController;
 use health_controller::HealthController;
 use std::io;
 use diesel::r2d2::ConnectionManager;
@@ -45,7 +45,7 @@ impl Server {
                                 "",
                                 HttpResponse::BadRequest().json(ApiError::from(format!("Wrong format: {}", err))),
                             )
-                            .into()
+                                .into()
                         }),
                 )
                 .service(web::resource("/health").route(web::get().to_async(HealthController::get)))
@@ -54,12 +54,22 @@ impl Server {
                         .route(web::post().to(EvaluationController::post)),
                 )
                 .service(
-                    web::resource("/promotions")
-                        .route(web::post().to(PromotionsController::post))
+                    web::scope("/promotions")
+                        .service(
+                            web::resource("")
+                                .route(web::post().to(PromotionsController::post))
+                                .route(web::get().to(PromotionsController::get_all))
+                        )
+                        .service(
+                            web::resource("{id}")
+                                .route(web::put().to(PromotionsController::put))
+                                .route(web::get().to(PromotionsController::get))
+                                .route(web::delete().to(PromotionsController::delete))
+                        )
                 )
         })
-        .bind(format!("{}:{}", &self.config.domain, &self.config.port))?
-        .run()
+            .bind(format!("{}:{}", &self.config.domain, &self.config.port))?
+            .run()
             .and_then(|_| Ok(println!("Server has started")))
     }
 
@@ -74,5 +84,5 @@ pub struct ServerConfig {
     pub db_host: String,
     pub db_name: String,
     pub db_user: String,
-    pub db_password: String
+    pub db_password: String,
 }

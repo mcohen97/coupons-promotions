@@ -4,20 +4,20 @@ use crate::server::ApiResult;
 
 #[derive(Insertable, Deserialize)]
 #[table_name="promotions"]
-pub struct NewPromotion<'a> {
-    pub code: &'a str,
-    pub name: &'a str,
+pub struct NewPromotion {
+    pub code: String,
+    pub name: String,
     pub active: bool,
-    pub return_type: &'a str,
+    pub return_type: String,
     pub return_value: f64,
-    pub type_: &'a str,
+    pub type_: String,
     pub organization_id: i32,
 }
 
-impl<'a> NewPromotion<'a> {
+impl NewPromotion {
     pub fn new(
-        name: &'a str,
-        code: &'a str,
+        name: String,
+        code: String,
         active: bool,
         p_return: PromotionReturn,
         p_type: PromotionType,

@@ -1,6 +1,7 @@
 use crate::schema::promotions;
+use crate::server::ApiResult;
 
-#[derive(Debug, Serialize, Deserialize, Queryable, Insertable, Clone)]
+#[derive(Debug, Serialize, Deserialize, Queryable, Insertable, AsChangeset, Clone)]
 #[table_name = "promotions"]
 pub struct Promotion {
     pub id: i32,
@@ -20,11 +21,17 @@ pub enum PromotionType {
     Coupon,
 }
 
+impl PromotionType {
+    pub fn to_string(&self) -> String {
+        serde_json::to_string_pretty(&self).unwrap()
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum PromotionReturn {
     Percentage(f64),
-    Fixed(f64)
+    Fixed(f64),
 }
 
 impl Promotion {
@@ -37,7 +44,7 @@ impl Promotion {
     }
 
     pub fn get_return(&self) -> PromotionReturn {
-        match self.return_type.as_ref(){
+        match self.return_type.as_ref() {
             "percentage" => PromotionReturn::Percentage(self.return_value),
             "fixed" => PromotionReturn::Fixed(self.return_value),
             _ => unreachable!("Invalid promotion type. data corrupted?")

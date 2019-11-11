@@ -11,7 +11,7 @@ pub struct OrganizationRepo {
 
 impl OrganizationRepo {
     pub fn create(&self, id: i32) -> ApiResult<(bool)> {
-        let res: Organization = diesel::insert_into(organizations)
+        let _res: Organization = diesel::insert_into(organizations)
             .values(&Organization { id })
             .get_result(&*self.conn)?;
 

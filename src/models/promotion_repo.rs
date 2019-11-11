@@ -27,6 +27,13 @@ impl PromotionRepo {
             .get_result(&*self.conn)?)
     }
 
+    pub fn update(&self, promo: &Promotion) -> ApiResult<()> {
+        let _result: Promotion = diesel::update(promotions)
+            .set(promo)
+            .get_result(&*self.conn)?;
+        Ok(())
+    }
+
     pub fn delete(&self, id: i32) -> ApiResult<bool> {
         let find = promotions.find(id);
         let delete = diesel::delete(find).execute(&*self.conn);
@@ -61,14 +68,19 @@ mod tests {
         let promo = repo.create(&new_promo).unwrap();
         assert_ne!(0, promo.id);
 
-        let fetched = repo.find(promo.id).unwrap();
+        let mut fetched = repo.find(promo.id).unwrap();
         assert_eq!(promo, fetched);
         assert_eq!(promo.name, fetched.name);
 
-        let deleted = repo.delete(promo.id).unwrap();
-        !(deleted);
+        fetched.name = "Another name".into();
+        repo.update(&fetched);
+        let mut fetched = repo.find(promo.id).unwrap();
+        assert_eq!("Another name", fetched.name);
 
-        let still_exists = repo.find(promo.id).err().is_some();
+        let deleted = repo.delete(promo.id).unwrap();
+        assert!(deleted);
+
+        let still_exists = repo.find(promo.id).err().is_none();
         assert!(!still_exists);
     }
 
@@ -84,24 +96,24 @@ mod tests {
         let repo = PromotionRepo::new(conn);
         let new_promo = build_promo();
 
-        let created = vec![repo.create(&new_promo).unwrap(); 10];
+        let created = vec![repo.create(&build_promo()).unwrap(); 10];
         let fetched = repo.get().unwrap();
 
         let fetched_same_as_created = created.iter().zip(fetched.iter())
             .all(|(f, s)| f == s);
-        assert!(fetched_same_as_created);
+        assert_eq!(true, fetched_same_as_created);
 
         let all_deleted = fetched.iter().all(|p| repo.delete(p.id).unwrap());
-        assert!(all_deleted);
+        assert_eq!(true,all_deleted);
 
         let promos_left = repo.get().unwrap();
         assert_eq!(0, promos_left.len());
     }
 
-    fn build_promo() -> NewPromotion<'static> {
+    fn build_promo() -> NewPromotion {
         NewPromotion::new(
-            "Promo",
-            "if valid_transaction then apply_discount",
+            "Promo".into(),
+            "if valid_transaction then apply_discount".into(),
             true,
             PromotionReturn::Percentage(10.0),
             PromotionType::Discount,

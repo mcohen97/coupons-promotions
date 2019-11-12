@@ -2,6 +2,7 @@ mod api_error;
 mod evaluation_controller;
 mod health_controller;
 mod promotions_controller;
+mod app_key_controller;
 mod model_in;
 
 pub use api_error::ApiError;
@@ -18,6 +19,7 @@ use actix::ContextFutureSpawner;
 use std::rc::Rc;
 use std::io::ErrorKind;
 use std::sync::Arc;
+use crate::server::app_key_controller::AppKeyController;
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
@@ -53,13 +55,12 @@ impl Server {
                             error::InternalError::from_response(
                                 "",
                                 HttpResponse::BadRequest().json(ApiError::from(format!("Wrong format: {}", err))),
-                            )
-                                .into()
+                            ).into()
                         }),
                 )
                 .service(web::resource("/health").route(web::get().to_async(HealthController::get)))
                 .service(
-                    web::resource("/evaluations/{code}")
+                    web::resource("/evaluations/{id}")
                         .route(web::post().to(EvaluationController::post)),
                 )
                 .service(
@@ -75,6 +76,9 @@ impl Server {
                                 .route(web::get().to(PromotionsController::get))
                                 .route(web::delete().to(PromotionsController::delete))
                         )
+                )
+                .service(
+                    web::resource("app_key").route(web::post().to(AppKeyController::post))
                 )
         })
             .bind(format!("{}:{}", &self.config.domain, &self.config.port))?
@@ -94,5 +98,5 @@ pub struct ServerConfig {
     pub db_user: String,
     pub db_password: String,
     pub rabbit_url: String,
-    pub logger_format: String
+    pub logger_format: String,
 }

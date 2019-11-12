@@ -58,7 +58,6 @@ impl EvaluationController {
         Ok(HttpResponse::Ok().json(res))
     }
 
-
     fn setup_services(pool: Data<Pool>) -> (EvaluationService, DemographyService) {
         let con = Rc::new(pool.get().unwrap());
         let repo = Box::new(PromotionRepo::new(con));

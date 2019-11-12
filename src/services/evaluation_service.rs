@@ -15,16 +15,25 @@ impl EvaluationService {
 
     pub fn evaluate_promotion(&self, promotion_id: i32, required: RequiredAttribute, attributes: HashMap<String, f64>) -> ApiResult<EvaluationResult> {
         let promotion = self.repo.find(promotion_id)?;
+        self.validate_promotion_is_active(&promotion)?;
         self.validate_required_attribute(&promotion, required)?;
+
         let total = attributes.get("total".into()).map(|v| v.to_owned());
         let expr = PromotionExpression::parse(&promotion.code)?;
-        let eval_result = expr.evaluate(attributes)?;
+        let eval_result =  expr.evaluate(attributes)?;
 
         let organization_id = promotion.organization_id;
         Ok(match eval_result {
             true => EvaluationResult::Applies { organization_id, total_discount: self.calculate_total_discount(total, promotion.get_return())? },
             false => EvaluationResult::DoesntApply { organization_id }
         })
+    }
+
+    fn validate_promotion_is_active(&self, promotion: &Promotion) -> ApiResult<()> {
+        if !promotion.active {
+            Err(ApiError::BadRequest("Promotion is not active".into()))
+        }
+        Ok(())
     }
 
     fn validate_required_attribute(&self, promotion: &Promotion, required: RequiredAttribute) -> ApiResult<()> {

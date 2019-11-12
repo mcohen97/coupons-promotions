@@ -8,6 +8,7 @@ use serde::ser::{Serialize, Serializer, SerializeStruct};
 const INVALID_COUNTRY: &str = "Invalid country code (Must be iso3166_1)";
 const INVALID_DATE: &str = "Invalid date (must be month/day/year)";
 
+#[derive(Clone, Debug)]
 pub struct Demographics<'a> {
     country: CountryCode<'a>,
     city: CityCode,

@@ -72,8 +72,8 @@ impl From<CityCodeParseError> for ApiError {
 }
 
 impl From<evalexpr::EvalexprError> for ApiError {
-    fn from(_: EvalexprError) -> Self {
-        ApiError::BadRequest("Promotion code is invalid".into())
+    fn from(e: EvalexprError) -> Self {
+        ApiError::BadRequest(format!("Promotion code is invalid: {}", e).into())
     }
 }
 
@@ -95,5 +95,14 @@ impl From<std::time::SystemTimeError> for ApiError {
 impl From<lapin::Error> for ApiError {
     fn from(e: lapin::Error) -> Self {
         ApiError::InternalError(Cow::Owned(e.description().to_string()))
+    }
+}
+
+impl ApiError {
+    pub fn get_message(&self) -> Cow<'static, str> {
+        match self {
+            ApiError::InternalError(m) => m.clone(),
+            ApiError::BadRequest(m) => m.clone()
+        }
     }
 }

@@ -64,7 +64,7 @@ pub enum RequiredAttribute {
     CouponCode(u32),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 pub enum EvaluationResult {
     Applies { organization_id: i32, total_discount: f64 },

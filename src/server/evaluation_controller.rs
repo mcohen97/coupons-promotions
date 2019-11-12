@@ -13,6 +13,10 @@ use std::error::Error;
 use chrono::Utc;
 use std::time::SystemTime;
 use std::rc::Rc;
+use std::borrow::Cow;
+use crate::server::model_in::{EvaluationIn, EvaluationOut};
+use crate::messages::{DemographyData, Message, EvaluationInfo};
+use crate::messages::EvaluationResult as MessageEvalResult;
 
 
 pub struct EvaluationController;
@@ -25,35 +29,31 @@ impl EvaluationController {
         let id = id.into_inner();
 
         let eval_result = eval_service.evaluate_promotion(id, required, attributes)?;
-
-        let demo = match demographic_data {
-            Some(DemographyIn{country, city, birth_date}) => Demographics::new(&country,&city,&birth_date).ok(),
-            None => None
-        };
-
-        let response_time = start.elapsed()?;
+        let (demo_response, demo) = demo_service.build_demographics_if_valid(demographic_data);
         let res = match eval_result {
-            EvaluationResult::Applies {organization_id, total_discount} => EvaluationOut {
+            EvaluationResult::Applies { organization_id, total_discount } => EvaluationOut {
                 promotion_id: id,
                 organization_id,
-                demographic_data: demo,
+                demographic_data: demo_response,
                 evaluation_info: EvaluationInfo {
                     applicable: true,
                     total_discounted: Some(total_discount),
-                    response_time: response_time.as_secs_f64(),
-                }
+                    response_time: start.elapsed().unwrap().as_secs_f64(),
+                },
             },
-            EvaluationResult::DoesntApply {organization_id} => EvaluationOut {
+            EvaluationResult::DoesntApply { organization_id } => EvaluationOut {
                 promotion_id: id,
                 organization_id,
-                demographic_data: None,
+                demographic_data: demo_response,
                 evaluation_info: EvaluationInfo {
                     applicable: false,
                     total_discounted: None,
-                    response_time: response_time.as_secs_f64(),
-                }
+                    response_time: start.elapsed().unwrap().as_secs_f64(),
+                },
             }
         };
+        Self::publish_message(&res, demo);
+
         Ok(HttpResponse::Ok().json(res))
     }
 
@@ -77,29 +77,15 @@ impl EvaluationController {
             })
             .unwrap_or("".into())
     }
-}
 
-#[derive(Serialize, Deserialize)]
-pub struct EvaluationIn {
-    pub attributes: HashMap<String, f64>,
-    pub demographic_data: Option<DemographyIn>,
-    #[serde(flatten)]
-    pub required: RequiredAttribute,
-}
+    fn publish_message(eval_result: &EvaluationOut, demo: Option<DemographyData>) {
+        let message = Message::PromotionEvaluated(MessageEvalResult {
+            promotion_id: eval_result.promotion_id,
+            organization_id: eval_result.organization_id,
+            evaluation_info: eval_result.evaluation_info,
+            demographic_data: demo
+        });
 
-#[derive(Serialize)]
-pub struct EvaluationOut<'a> {
-    pub promotion_id: i32,
-    pub organization_id: i32,
-    pub evaluation_info: EvaluationInfo,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub demographic_data: Option<Demographics<'a>>,
-}
-
-#[derive(Serialize)]
-pub struct EvaluationInfo {
-    pub applicable: bool,
-    pub response_time: f64,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub total_discounted: Option<f64>,
+        message.send();
+    }
 }

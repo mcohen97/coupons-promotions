@@ -1,4 +1,8 @@
 use crate::models::{PromotionType, PromotionReturn};
+use std::collections::HashMap;
+use crate::services::{DemographyIn, RequiredAttribute};
+use std::borrow::Cow;
+use crate::messages::EvaluationInfo;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PromotionIn {
@@ -28,6 +32,25 @@ impl ReturnTypesIn {
 
 impl ReturnTypesIn {
     pub fn to_string(&self) -> String {
-        serde_json::to_string_pretty(&self).unwrap()
+        match self {
+            ReturnTypesIn::Percentage => "percentage".to_string(),
+            ReturnTypesIn::Fixed => "fixed".to_string()
+        }
     }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct EvaluationIn {
+    pub attributes: HashMap<String, f64>,
+    pub demographic_data: Option<DemographyIn>,
+    #[serde(flatten)]
+    pub required: RequiredAttribute,
+}
+
+#[derive(Serialize)]
+pub struct EvaluationOut {
+    pub promotion_id: i32,
+    pub organization_id: i32,
+    pub evaluation_info: EvaluationInfo,
+    pub demographic_data: Cow<'static, str>,
 }

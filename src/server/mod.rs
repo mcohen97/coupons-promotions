@@ -4,8 +4,8 @@ mod health_controller;
 mod promotions_controller;
 mod model_in;
 
-use actix_web::{error, middleware, web, App, HttpResponse, HttpServer};
 pub use api_error::ApiError;
+use actix_web::{error, middleware, web, App, HttpResponse, HttpServer};
 use evaluation_controller::EvaluationController;
 use health_controller::HealthController;
 use std::io;
@@ -13,7 +13,7 @@ use diesel::r2d2::ConnectionManager;
 use diesel::PgConnection;
 use crate::models;
 use crate::server::promotions_controller::PromotionsController;
-use crate::services::MessageListener;
+use crate::messages::MessageListener;
 use actix::ContextFutureSpawner;
 
 pub type ApiResult<T> = Result<T, ApiError>;
@@ -34,10 +34,6 @@ impl Server {
         let pool: models::Pool = r2d2::Pool::builder()
             .build(manager)
             .expect("Failed to create pool.");
-
-        let m = MessageListener::new("amqp://lyepjabq:DDt-OwA5B7XOCswfKgthGwA59yA1P73w@prawn.rmq.cloudamqp.com/lyepjabq");
-        let f = m.start();
-        actix::spawn(f);
 
         HttpServer::new(move || {
             App::new()

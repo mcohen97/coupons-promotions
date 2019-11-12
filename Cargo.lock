@@ -741,6 +741,7 @@ dependencies = [
  "iso3166-1 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lapin 0.28.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "lapin-futures 0.28.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "mime 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "r2d2 0.8.6 (registry+https://github.com/rust-lang/crates.io-index)",

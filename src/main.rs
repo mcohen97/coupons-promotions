@@ -2,7 +2,7 @@
 // usful in dev mode
 use std::io;
 use crate::server::{Server, ServerConfig};
-use crate::services::MessageListener;
+use crate::messages::MessageListener;
 
 #[macro_use]
 extern crate diesel;
@@ -21,10 +21,13 @@ extern crate evalexpr;
 extern crate env_logger;
 extern crate lapin;
 extern crate lapin_futures;
+#[macro_use]
+extern crate lazy_static;
 mod server;
 mod services;
 mod models;
 mod schema;
+mod messages;
 
 
 fn main() -> io::Result<()> {

@@ -22,7 +22,10 @@ pub enum PromotionType {
 
 impl PromotionType {
     pub fn to_string(&self) -> String {
-        serde_json::to_string_pretty(&self).unwrap()
+        match self {
+            PromotionType::Coupon => "coupon".to_string(),
+            PromotionType::Discount => "discount".to_string()
+        }
     }
 }
 

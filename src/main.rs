@@ -41,9 +41,10 @@ fn main() -> io::Result<()> {
     let db_password = std::env::var("DB_PASSWORD").expect("DB_PASSWORD missing");
     let db_name = std::env::var("DB_NAME").expect("DB_NAME missing");
     let rabbit_url = std::env::var("RABBIT_URL").expect("RABBIT_URL missing");
+    let logger_format = std::env::var("LOGGER_FORMAT").expect("LOGGER_FORMAT missing");
 
     info!("Server is staring at {}:{}", &domain, &port);
-    let config = ServerConfig { domain, port, db_host, db_name, db_user, db_password, rabbit_url };
+    let config = ServerConfig { domain, port, db_host, db_name, db_user, db_password, rabbit_url, logger_format };
     let server = Server::new(config);
     server.start()?;
 

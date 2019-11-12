@@ -37,6 +37,7 @@ impl Server {
         let pool: models::Pool = r2d2::Pool::builder()
             .build(manager)
             .expect("Failed to create pool.");
+        let f = self.config.logger_format.to_string();
         let message_sender = MessageSender::new(&self.config.rabbit_url)
             .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;
 
@@ -44,7 +45,7 @@ impl Server {
             App::new()
                 .data(pool.clone())
                 .data(message_sender.clone())
-                .wrap(middleware::Logger::default())
+                .wrap(middleware::Logger::new(&f))
                 .data(
                     web::JsonConfig::default()
                         .content_type(|mime| mime == mime::APPLICATION_JSON)
@@ -93,4 +94,5 @@ pub struct ServerConfig {
     pub db_user: String,
     pub db_password: String,
     pub rabbit_url: String,
+    pub logger_format: String
 }

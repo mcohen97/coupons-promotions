@@ -1,23 +1,25 @@
 use actix_web::{web, HttpResponse};
-use crate::server::{ApiResult};
+use crate::server::ApiResult;
 use actix_web::web::Json;
 use crate::models::{NewPromotion, Pool, Promotion, PromotionRepo, PromotionExpression};
 use std::rc::Rc;
 use crate::server::model_in::*;
+use crate::messages::{MessageSender, Message};
 
 pub struct PromotionsController;
 
 impl PromotionsController {
-    pub fn post(data: Json<PromotionIn>, pool: web::Data<Pool>) -> ApiResult<HttpResponse> {
+    pub fn post(data: Json<PromotionIn>, pool: web::Data<Pool>, sender: web::Data<MessageSender>) -> ApiResult<HttpResponse> {
         let repo = Self::setup_repo(pool);
         let new_promotion = Self::build_new_promotion(data);
         Self::validate_code(&new_promotion.code)?;
         let created = repo.create(&new_promotion)?;
 
+        sender.send(Message::PromotionCreated(created.clone()));
         Ok(HttpResponse::Created().json(created))
     }
 
-    pub fn put(id: web::Path<i32>, data: Json<PromotionIn>, pool: web::Data<Pool>) -> ApiResult<HttpResponse> {
+    pub fn put(id: web::Path<i32>, data: Json<PromotionIn>, pool: web::Data<Pool>, sender: web::Data<MessageSender>) -> ApiResult<HttpResponse> {
         let repo = Self::setup_repo(pool);
         let id = id.into_inner();
 
@@ -27,14 +29,16 @@ impl PromotionsController {
         Self::validate_code(&promotion.code)?;
         repo.update(&promotion)?;
 
+        sender.send(Message::PromotionUpdate(promotion.clone()));
         Ok(HttpResponse::Ok().json(promotion))
     }
 
-    pub fn delete(id: web::Path<i32>, pool: web::Data<Pool>) -> ApiResult<HttpResponse> {
+    pub fn delete(id: web::Path<i32>, pool: web::Data<Pool>, sender: web::Data<MessageSender>) -> ApiResult<HttpResponse> {
         let repo = Self::setup_repo(pool);
         let id = id.into_inner();
         repo.delete(id)?;
 
+        sender.send(Message::PromotionDeleted(id.into()));
         Ok(HttpResponse::Ok().finish())
     }
 

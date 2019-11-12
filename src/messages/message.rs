@@ -4,11 +4,12 @@ use crate::messages::MessageSender;
 use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(untagged)]
 pub enum Message {
     PromotionCreated(Promotion),
     PromotionUpdate(Promotion),
-    PromotionDeleted(i32),
-    PromotionEvaluated(EvaluationResult)
+    PromotionDeleted(Id),
+    PromotionEvaluated(EvaluationResult),
 }
 
 impl Message {
@@ -48,4 +49,15 @@ pub struct DemographyData {
     pub city: String,
     pub country: String,
     pub birth_date: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Id {
+    id: i32
+}
+
+impl From<i32> for Id {
+    fn from(id: i32) -> Self {
+        Id { id }
+    }
 }

@@ -1,38 +1,44 @@
 use crate::messages::Message;
 use crate::server::ApiResult;
-use lapin_futures::{Client, ConnectionProperties};
+use lapin_futures::{Client, ConnectionProperties, Channel};
 use crate::lapin::{
-    BasicProperties, Channel, Connection, ConsumerDelegate,
+    BasicProperties, Connection, ConsumerDelegate,
     message::DeliveryResult,
     options::*,
     types::FieldTable,
 };
 use futures::Future;
 
-lazy_static! {
-    static ref URL: String = std::env::var("RABBIT_URL").expect("Rabbit URL not set");
+static EXCHANGE: &str = "amq.topic";
+
+#[derive(Clone)]
+pub struct MessageSender {
+    client: Client,
+    channel: Channel,
 }
-static EXCHANGE: &str = "";
 
-pub struct MessageSender {}
-
-impl MessageSender{
-    pub fn send(message: Message) {
-        actix::spawn(Self::send_future(message));
+impl MessageSender {
+    pub fn new(url: &str) -> Result<Self, lapin::Error> {
+        info!("Connecting to Rabbit MQ with url {}", url);
+        let client = Client::connect(&url, ConnectionProperties::default()).wait()?;
+        info!("Connected to Rabbit MQ");
+        let channel = client.create_channel().wait()?;
+        info!("Created channel with id {}", channel.id());
+        Ok(MessageSender { client, channel })
     }
 
-    fn send_future(message: Message) -> impl Future<Item=(), Error=()>{
-        let url = std::env::var("RABBIT_URL").expect("Rabbit URL not set");
+    pub fn send(&self, message: Message) {
+        actix::spawn(self.send_future(message));
+    }
+
+    fn send_future(&self, message: Message) -> impl Future<Item=(), Error=()> {
         let key = message.get_routing_key();
         let payload = serde_json::to_string_pretty(&message).expect("Serialization error").into_bytes();
-        Client::connect(&url, ConnectionProperties::default()).and_then(|client| {
-            client.create_channel()
-        }).and_then(move |channel| {
-            info!("created channel with id: {}", channel.id());
-            channel.basic_publish(EXCHANGE, key, payload, BasicPublishOptions::default(), BasicProperties::default())
-        }).and_then(move |_| {
-            info!("Message sent to {}", key);
-            futures::future::ok(())
-        }).map_err(|e| error!("Failed to send message {}", e))
+
+        self.channel.basic_publish(EXCHANGE, key, payload, BasicPublishOptions::default(), BasicProperties::default())
+            .and_then(move |_| {
+                info!("Message sent to {}", key);
+                futures::future::ok(())
+            }).map_err(|e| error!("Failed to send message {}", e))
     }
 }

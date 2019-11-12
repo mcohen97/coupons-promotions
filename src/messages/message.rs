@@ -1,6 +1,7 @@
 use crate::models::{Promotion, Demographics};
 use crate::server::ApiResult;
 use crate::messages::MessageSender;
+use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Message {
@@ -11,8 +12,8 @@ pub enum Message {
 }
 
 impl Message {
-    pub fn send(self) {
-        MessageSender::send(self)
+    pub fn send(self, sender: Arc<MessageSender>) {
+        sender.send(self)
     }
 
     pub fn get_routing_key(&self) -> &'static str {

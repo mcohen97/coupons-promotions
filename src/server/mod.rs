@@ -13,8 +13,11 @@ use diesel::r2d2::ConnectionManager;
 use diesel::PgConnection;
 use crate::models;
 use crate::server::promotions_controller::PromotionsController;
-use crate::messages::MessageListener;
+use crate::messages::{MessageListener, MessageSender};
 use actix::ContextFutureSpawner;
+use std::rc::Rc;
+use std::io::ErrorKind;
+use std::sync::Arc;
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
@@ -34,10 +37,13 @@ impl Server {
         let pool: models::Pool = r2d2::Pool::builder()
             .build(manager)
             .expect("Failed to create pool.");
+        let message_sender = MessageSender::new(&self.config.rabbit_url)
+            .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;
 
         HttpServer::new(move || {
             App::new()
                 .data(pool.clone())
+                .data(message_sender.clone())
                 .wrap(middleware::Logger::default())
                 .data(
                     web::JsonConfig::default()
@@ -86,4 +92,5 @@ pub struct ServerConfig {
     pub db_name: String,
     pub db_user: String,
     pub db_password: String,
+    pub rabbit_url: String,
 }

@@ -15,14 +15,15 @@ use std::time::SystemTime;
 use std::rc::Rc;
 use std::borrow::Cow;
 use crate::server::model_in::{EvaluationIn, EvaluationOut};
-use crate::messages::{DemographyData, Message, EvaluationInfo};
+use crate::messages::{DemographyData, Message, EvaluationInfo, MessageSender};
 use crate::messages::EvaluationResult as MessageEvalResult;
+use std::sync::Arc;
 
 
 pub struct EvaluationController;
 
 impl EvaluationController {
-    pub fn post(id: web::Path<i32>, data: Json<EvaluationIn>, _pool: web::Data<Pool>, req: HttpRequest) -> ApiResult<HttpResponse> {
+    pub fn post(id: web::Path<i32>, data: Json<EvaluationIn>, _pool: web::Data<Pool>, sender: web::Data<MessageSender>, req: HttpRequest) -> ApiResult<HttpResponse> {
         let start = SystemTime::now();
         let (eval_service, demo_service) = Self::setup_services(_pool);
         let EvaluationIn { required, attributes, demographic_data } = data.into_inner();
@@ -52,7 +53,7 @@ impl EvaluationController {
                 },
             }
         };
-        Self::publish_message(&res, demo);
+        Self::publish_message(&res, demo, sender.into_inner());
 
         Ok(HttpResponse::Ok().json(res))
     }
@@ -78,14 +79,14 @@ impl EvaluationController {
             .unwrap_or("".into())
     }
 
-    fn publish_message(eval_result: &EvaluationOut, demo: Option<DemographyData>) {
+    fn publish_message(eval_result: &EvaluationOut, demo: Option<DemographyData>, sender: Arc<MessageSender>) {
         let message = Message::PromotionEvaluated(MessageEvalResult {
             promotion_id: eval_result.promotion_id,
             organization_id: eval_result.organization_id,
             evaluation_info: eval_result.evaluation_info,
-            demographic_data: demo
+            demographic_data: demo,
         });
 
-        message.send();
+        message.send(sender);
     }
 }

@@ -1,63 +1,69 @@
-use futures::future::Future;
-use lapin_futures::{Client, ConnectionProperties};
+use crate::messages::Id;
 use crate::lapin::{
-    BasicProperties,
     options::*,
-    types::FieldTable,
 };
-use futures::Stream;
+use futures::{Future, Stream};
+use crate::messages::message_handler::MessageHandler;
+use lapin_futures::Queue;
+use lapin::message::Delivery;
+use crate::lapin::types::FieldTable;
+use crate::models::OrganizationRepo;
+use std::error::Error as StdError;
 
+static EXCHANGE: &str = "amq.topic";
+static QUEUE: &str = "queue1";
+
+#[derive(Clone)]
 pub struct MessageListener {
-    url: String
+    handler: MessageHandler,
+    repo: OrganizationRepo,
+    queue: Queue,
 }
 
 impl MessageListener {
-    pub fn new<T>(url: T) -> Self where T: Into<String> {
-        MessageListener { url: url.into() }
+    pub fn new(url: &str, repo: OrganizationRepo) -> Result<Self, lapin::Error> {
+        let handler = MessageHandler::new(url, "Message listener")?;
+        let queue = handler.channel.queue_declare(QUEUE, QueueDeclareOptions::default(), FieldTable::default()).wait()?;
+        handler.channel.queue_bind(queue.name().as_str(), EXCHANGE, "organization.*", QueueBindOptions::default(), FieldTable::default()).wait()?;
+        info!("Queue {} created", queue.name());
+
+        Ok(MessageListener { handler, repo, queue })
     }
 
-    pub fn start(&self) -> impl Future<Item=(), Error=()> {
-        Client::connect(&self.url, ConnectionProperties::default()).and_then(|client| {
-            // create_channel returns a future that is resolved
-            // once the channel is successfully created
-            client.create_channel()
-        }).and_then(|channel| {
-            let id = channel.id();
-            info!("created channel with id: {}", id);
-            let ch = channel.clone();
+    pub fn run(&self) {
+        actix::spawn(self.send_future());
+    }
 
-            channel.basic_publish("", "hello", Vec::from("Send the load bitch".as_bytes()), BasicPublishOptions::default(), BasicProperties::default())
-                .and_then(move |_| {
-                    info!("published message");
-                    channel.queue_declare("hello", QueueDeclareOptions::default(), FieldTable::default()).and_then(move |queue| {
-                        info!("channel {} declared queue {}", id, "hello");
+    fn send_future(&self) -> impl Future<Item=(), Error=()> {
+        let ch = self.handler.channel.clone();
+        let repo = self.repo.clone();
 
-                        // basic_consume returns a future of a message
-                        // stream. Any time a message arrives for this consumer,
-                        // the for_each method would be called
-                        channel.basic_consume(&queue, "my_consumer", BasicConsumeOptions::default(), FieldTable::default())
-                    }).and_then(|stream| {
-                        info!("got consumer stream");
-
-                        stream.for_each(move |message| {
-                            debug!("got message: {:?}", message);
-                            info!("decoded message: {:?}", std::str::from_utf8(&message.data).unwrap());
-                            ch.basic_ack(message.delivery_tag, false)
-                        })
-                    })
+        self.handler.channel.basic_consume(&self.queue, "evaluation consumer", BasicConsumeOptions::default(), FieldTable::default())
+            .and_then(move |stream| {
+                stream.for_each(move |message| {
+                    if let Err(e) = Self::consume_message(&message, repo.clone()) {
+                        error!("{}", e);
+                    }
+                    ch.basic_ack(message.delivery_tag, false)
                 })
-        }).map_err(|e| ( error!("{}", e)))
+            }).map_err(|e| error!("{}", e))
+    }
+
+    fn consume_message(message: &Delivery, repo: OrganizationRepo) -> Result<(), String> {
+        let payload = std::str::from_utf8(&message.data).map_err(|e| e.description().to_string())?;
+        let data: Id = serde_json::from_str(payload).map_err(|e| e.description().to_string())?;
+
+        match message.routing_key.as_str() {
+            "organization.created" => {
+                info!("Creating organization with id {}", data.id);
+                repo.create(data.id).map_err(|e| e.get_message().to_string()).map(|_| ()) }
+            "organization.deleted" => {
+                info!("Deleting organization with id {}", data.id);
+                repo.delete(data.id).map_err(|e| e.get_message().to_string()).map(|_| ()) }
+            _ => Err("Unknown message".to_string())
+        }?;
+
+        Ok(())
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test() {
-        env_logger::init();
-        let m = MessageListener::new("amqp://lyepjabq:DDt-OwA5B7XOCswfKgthGwA59yA1P73w@prawn.rmq.cloudamqp.com/lyepjabq");
-        m.start();
-    }
-}

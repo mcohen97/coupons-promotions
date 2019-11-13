@@ -52,7 +52,7 @@ pub struct DemographyData {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Id {
-    id: i32
+    pub id: i32
 }
 
 impl From<i32> for Id {

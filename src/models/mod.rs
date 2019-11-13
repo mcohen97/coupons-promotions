@@ -10,6 +10,7 @@ mod new_promotion;
 pub use demographics::*;
 pub use promotion::*;
 pub use promotion_repo::*;
+pub use organization_repo::*;
 pub use new_promotion::*;
 pub use expression_parser::*;
 

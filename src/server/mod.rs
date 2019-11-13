@@ -14,9 +14,11 @@ use diesel::r2d2::ConnectionManager;
 use diesel::PgConnection;
 use crate::models;
 use crate::server::promotions_controller::PromotionsController;
-use crate::messages::{MessageSender};
+use crate::messages::{MessageSender, MessageListener};
 use std::io::ErrorKind;
 use crate::server::app_key_controller::AppKeyController;
+use crate::models::OrganizationRepo;
+use std::rc::Rc;
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
@@ -30,15 +32,19 @@ impl Server {
     }
 
     pub fn start(&self) -> io::Result<()> {
-        actix::System::new("sys");
+        let _ = actix::System::new("sys");
         // create db connection pool
         let manager = ConnectionManager::<PgConnection>::new(self.generate_database_url());
         let pool: models::Pool = r2d2::Pool::builder()
             .build(manager)
             .expect("Failed to create pool.");
         let f = self.config.logger_format.to_string();
+
         let message_sender = MessageSender::new(&self.config.rabbit_url)
             .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;
+        let message_listener = MessageListener::new(&self.config.rabbit_url, OrganizationRepo::new(Rc::new(pool.clone().get().unwrap())))
+            .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;
+        message_listener.run();
 
         HttpServer::new(move || {
             App::new()

@@ -5,11 +5,17 @@ use crate::schema::organizations::dsl::organizations;
 use diesel::{RunQueryDsl, QueryDsl};
 use crate::models::organization::Organization;
 
+#[derive(Clone)]
 pub struct OrganizationRepo {
     conn: Rc<Connection>
 }
 
 impl OrganizationRepo {
+    pub fn new(conn: Rc<Connection>) -> Self {
+        OrganizationRepo { conn }
+    }
+
+
     pub fn create(&self, id: i32) -> ApiResult<(bool)> {
         let _res: Organization = diesel::insert_into(organizations)
             .values(&Organization { id })

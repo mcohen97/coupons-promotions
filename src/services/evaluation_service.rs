@@ -30,10 +30,13 @@ impl EvaluationService {
     }
 
     fn validate_promotion_is_active(&self, promotion: &Promotion) -> ApiResult<()> {
+
         if !promotion.active {
             Err(ApiError::BadRequest("Promotion is not active".into()))
         }
-        Ok(())
+        else {
+            Ok(())
+        }
     }
 
     fn validate_required_attribute(&self, promotion: &Promotion, required: RequiredAttribute) -> ApiResult<()> {

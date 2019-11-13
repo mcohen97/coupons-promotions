@@ -1,7 +1,6 @@
-use crate::server::ApiResult;
 use crate::models::Demographics;
 use std::borrow::Cow;
-use crate::messages::{Message, DemographyData};
+use crate::messages::{DemographyData};
 
 pub struct DemographyService;
 

@@ -1,8 +1,9 @@
 use crate::schema::promotions;
 use crate::models::{PromotionReturn, PromotionType};
+use chrono::NaiveDate;
 
 #[derive(Insertable, Deserialize)]
-#[table_name="promotions"]
+#[table_name = "promotions"]
 pub struct NewPromotion {
     pub code: String,
     pub name: String,
@@ -11,6 +12,7 @@ pub struct NewPromotion {
     pub return_value: f64,
     pub type_: String,
     pub organization_id: i32,
+    pub expiration: NaiveDate,
 }
 
 impl NewPromotion {
@@ -20,7 +22,9 @@ impl NewPromotion {
         active: bool,
         p_return: PromotionReturn,
         p_type: PromotionType,
-        organization_id: i32, ) -> Self {
+        organization_id: i32,
+        expiration: NaiveDate,
+    ) -> Self {
         let (return_type, return_value) = match p_return {
             PromotionReturn::Percentage(val) => ("percentage".into(), val),
             PromotionReturn::Fixed(val) => ("fixed".into(), val)
@@ -30,6 +34,6 @@ impl NewPromotion {
             PromotionType::Discount => "discount".into()
         };
 
-        NewPromotion { name, code, active, return_value, return_type, type_, organization_id}
+        NewPromotion { name, code, active, return_value, return_type, type_, organization_id, expiration }
     }
 }

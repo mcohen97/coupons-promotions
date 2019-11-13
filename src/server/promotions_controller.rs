@@ -24,8 +24,8 @@ impl PromotionsController {
         let id = id.into_inner();
 
         let mut promotion = repo.find(id)?;
-        let PromotionIn { name, code, return_type, return_value, promotion_type, organization_id } = data.into_inner();
-        promotion = Promotion { name, code: code.to_lowercase(), return_type: return_type.to_string(), return_value, type_: promotion_type.to_string(), organization_id, ..promotion };
+        let PromotionIn { name, code, return_type, return_value, promotion_type, organization_id, expiration } = data.into_inner();
+        promotion = Promotion { name, code: code.to_lowercase(), return_type: return_type.to_string(), return_value, type_: promotion_type.to_string(), organization_id, expiration, ..promotion };
         Self::validate_code(&promotion.code)?;
         repo.update(&promotion)?;
 
@@ -63,7 +63,7 @@ impl PromotionsController {
     }
 
     fn build_new_promotion(data: Json<PromotionIn>) -> NewPromotion {
-        let PromotionIn { name, code, return_type, return_value, promotion_type, organization_id } = data.into_inner();
+        let PromotionIn { name, code, return_type, return_value, promotion_type, organization_id, expiration } = data.into_inner();
         let ret = return_type.get_return(return_value);
         NewPromotion::new(
             name,
@@ -72,6 +72,7 @@ impl PromotionsController {
             ret,
             promotion_type,
             organization_id,
+            expiration,
         )
     }
 

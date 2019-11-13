@@ -1,13 +1,11 @@
 use futures::future::Future;
 use lapin_futures::{Client, ConnectionProperties};
 use crate::lapin::{
-    BasicProperties, Channel, Connection, ConsumerDelegate,
-    message::DeliveryResult,
+    BasicProperties,
     options::*,
     types::FieldTable,
 };
 use futures::Stream;
-use crate::server::ApiError;
 
 pub struct MessageListener {
     url: String

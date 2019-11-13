@@ -15,7 +15,7 @@ actix= "0.8.3"
 futures = "0.1"
 iso3166-1 = "1.0.1"
 mime = "0.3.14"
-chrono = "0.4.0"
+chrono = { version = "0.4", features = ["serde"] }
 iata-types = "0.1.4"
 http = "0.1"
 diesel = { version = "1.4.2", features = ["postgres","uuidv07", "r2d2", "chrono", "numeric"] }
@@ -26,4 +26,3 @@ env_logger = "0.7.1"
 lapin-futures = "^0.28"
 lapin = "0.28.2"
 log = "0.4"
-lazy_static = "1.4.0"

@@ -14,11 +14,8 @@ use diesel::r2d2::ConnectionManager;
 use diesel::PgConnection;
 use crate::models;
 use crate::server::promotions_controller::PromotionsController;
-use crate::messages::{MessageListener, MessageSender};
-use actix::ContextFutureSpawner;
-use std::rc::Rc;
+use crate::messages::{MessageSender};
 use std::io::ErrorKind;
-use std::sync::Arc;
 use crate::server::app_key_controller::AppKeyController;
 
 pub type ApiResult<T> = Result<T, ApiError>;

@@ -1,5 +1,4 @@
-use crate::models::{Promotion, Demographics};
-use crate::server::ApiResult;
+use crate::models::{Promotion};
 use crate::messages::MessageSender;
 use std::sync::Arc;
 

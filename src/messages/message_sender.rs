@@ -1,11 +1,8 @@
 use crate::messages::Message;
-use crate::server::ApiResult;
 use lapin_futures::{Client, ConnectionProperties, Channel};
 use crate::lapin::{
-    BasicProperties, Connection, ConsumerDelegate,
-    message::DeliveryResult,
-    options::*,
-    types::FieldTable,
+    BasicProperties,
+    options::*
 };
 use futures::Future;
 

@@ -15,6 +15,7 @@ table! {
         #[sql_name = "type"]
         type_ -> Varchar,
         organization_id -> Int4,
+        expiration -> Date,
     }
 }
 

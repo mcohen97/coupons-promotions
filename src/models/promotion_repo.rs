@@ -52,6 +52,7 @@ mod tests {
     use diesel::r2d2::ConnectionManager;
     use crate::models;
     use crate::models::{PromotionReturn, PromotionType};
+    use chrono::Utc;
 
     #[test]
     fn crud_test() {
@@ -118,6 +119,7 @@ mod tests {
             PromotionReturn::Percentage(10.0),
             PromotionType::Discount,
             1,
+            Utc::now()
         )
     }
 }

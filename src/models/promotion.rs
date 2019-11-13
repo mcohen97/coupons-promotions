@@ -1,5 +1,5 @@
 use crate::schema::promotions;
-use chrono::NaiveDate;
+use crate::models::DateTime;
 
 #[derive(Debug, Serialize, Deserialize, Queryable, Insertable, AsChangeset, Clone)]
 #[table_name = "promotions"]
@@ -12,7 +12,7 @@ pub struct Promotion {
     pub return_value: f64,
     pub type_: String,
     pub organization_id: i32,
-    pub expiration: NaiveDate,
+    pub expiration: DateTime,
 }
 
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]

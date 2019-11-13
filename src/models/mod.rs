@@ -16,8 +16,10 @@ pub use expression_parser::*;
 
 use diesel::{r2d2::ConnectionManager, PgConnection};
 use r2d2::PooledConnection;
+use chrono::Utc;
 
 // type alias to use in multiple places
+pub type DateTime = chrono::DateTime<Utc>;
 pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 pub type Connection = PooledConnection<ConnectionManager<PgConnection>>;
 

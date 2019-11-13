@@ -3,6 +3,7 @@ use crate::server::ApiResult;
 use std::collections::HashMap;
 use crate::models::{Promotion, PromotionRepo, PromotionType, PromotionExpression, PromotionReturn};
 use crate::server::ApiError;
+use chrono::{Utc};
 
 pub struct EvaluationService {
     repo: Box<PromotionRepo>
@@ -17,10 +18,11 @@ impl EvaluationService {
         let promotion = self.repo.find(promotion_id)?;
         self.validate_promotion_is_active(&promotion)?;
         self.validate_required_attribute(&promotion, required)?;
+        self.validate_not_expires(&promotion)?;
 
         let total = attributes.get("total".into()).map(|v| v.to_owned());
         let expr = PromotionExpression::parse(&promotion.code)?;
-        let eval_result =  expr.evaluate(attributes)?;
+        let eval_result = expr.evaluate(attributes)?;
 
         let organization_id = promotion.organization_id;
         Ok(match eval_result {
@@ -29,12 +31,22 @@ impl EvaluationService {
         })
     }
 
-    fn validate_promotion_is_active(&self, promotion: &Promotion) -> ApiResult<()> {
-
-        if !promotion.active {
-            Err(ApiError::BadRequest("Promotion is not active".into()))
+    fn validate_not_expires(&self, promotion: &Promotion) -> ApiResult<()> {
+        let now = Utc::now();
+        let expiration_has_passed = now > promotion.expiration;
+        if expiration_has_passed {
+            let diff = now - promotion.expiration;
+            Err(ApiError::BadRequest(format!("Coupon expired {} hours ago", diff.num_hours()).into()))
         }
         else {
+            Ok(())
+        }
+    }
+
+    fn validate_promotion_is_active(&self, promotion: &Promotion) -> ApiResult<()> {
+        if !promotion.active {
+            Err(ApiError::BadRequest("Promotion is not active".into()))
+        } else {
             Ok(())
         }
     }

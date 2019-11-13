@@ -1,9 +1,8 @@
-use crate::models::{PromotionType, PromotionReturn};
+use crate::models::{PromotionType, PromotionReturn, DateTime};
 use std::collections::HashMap;
 use crate::services::{DemographyIn, RequiredAttribute};
 use std::borrow::Cow;
 use crate::messages::EvaluationInfo;
-use chrono::NaiveDate;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PromotionIn {
@@ -13,7 +12,7 @@ pub struct PromotionIn {
     pub return_value: f64,
     pub promotion_type: PromotionType,
     pub organization_id: i32,
-    pub expiration: NaiveDate,
+    pub expiration: DateTime,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

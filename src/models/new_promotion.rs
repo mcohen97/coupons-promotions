@@ -1,6 +1,5 @@
 use crate::schema::promotions;
-use crate::models::{PromotionReturn, PromotionType};
-use chrono::NaiveDate;
+use crate::models::{PromotionReturn, PromotionType, DateTime};
 
 #[derive(Insertable, Deserialize)]
 #[table_name = "promotions"]
@@ -12,7 +11,7 @@ pub struct NewPromotion {
     pub return_value: f64,
     pub type_: String,
     pub organization_id: i32,
-    pub expiration: NaiveDate,
+    pub expiration: DateTime,
 }
 
 impl NewPromotion {
@@ -23,7 +22,7 @@ impl NewPromotion {
         p_return: PromotionReturn,
         p_type: PromotionType,
         organization_id: i32,
-        expiration: NaiveDate,
+        expiration: DateTime,
     ) -> Self {
         let (return_type, return_value) = match p_return {
             PromotionReturn::Percentage(val) => ("percentage".into(), val),

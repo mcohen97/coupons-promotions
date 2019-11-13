@@ -1,3 +1,3 @@
 -- Your SQL goes here
 
-ALTER TABLE promotions ADD expiration DATE NOT NULL;
+ALTER TABLE promotions ADD expiration TIMESTAMP with time zone NOT NULL;

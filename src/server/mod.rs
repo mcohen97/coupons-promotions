@@ -33,24 +33,16 @@ impl Server {
 
     pub fn start(&self) -> io::Result<()> {
         let _ = actix::System::new("sys");
-        // create db connection pool
-        let manager = ConnectionManager::<PgConnection>::new(self.generate_database_url());
-        let pool: models::Pool = r2d2::Pool::builder()
-            .build(manager)
-            .expect("Failed to create pool.");
-        let f = self.config.logger_format.to_string();
+        let logger_format = self.config.logger_format.to_string();
 
-        let message_sender = MessageSender::new(&self.config.rabbit_url)
-            .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;
-        let message_listener = MessageListener::new(&self.config.rabbit_url, OrganizationRepo::new(Rc::new(pool.clone().get().unwrap())))
-            .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;
-        message_listener.run();
+        let pool = self.get_pool();
+        let (message_sender, message_listener) = self.start_message_handlers();
 
         HttpServer::new(move || {
             App::new()
                 .data(pool.clone())
                 .data(message_sender.clone())
-                .wrap(middleware::Logger::new(&f))
+                .wrap(middleware::Logger::new(&logger_format))
                 .data(
                     web::JsonConfig::default()
                         .content_type(|mime| mime == mime::APPLICATION_JSON)
@@ -86,6 +78,23 @@ impl Server {
         })
             .bind(format!("{}:{}", &self.config.domain, &self.config.port))?
             .run()
+    }
+
+    fn get_pool(&self) -> models::Pool {
+        let manager = ConnectionManager::<PgConnection>::new(self.generate_database_url());
+        let pool: models::Pool = r2d2::Pool::builder()
+            .build(manager)
+            .expect("Failed to create pool.");
+    }
+
+    fn start_message_handlers(&self) -> (MessageSender, MessageListener) {
+        let message_sender = MessageSender::new(&self.config.rabbit_url)
+            .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;
+        let message_listener = MessageListener::new(&self.config.rabbit_url, OrganizationRepo::new(Rc::new(pool.clone().get().unwrap())))
+            .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;
+        message_listener.run();
+
+        (message_sender, message_listener)
     }
 
     fn generate_database_url(&self) -> String {

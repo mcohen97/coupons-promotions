@@ -36,23 +36,14 @@ impl Server {
         let logger_format = self.config.logger_format.to_string();
 
         let pool = self.get_pool();
-        let (message_sender, message_listener) = self.start_message_handlers();
+        let (message_sender, _message_listener) = self.start_message_handlers(pool.clone())?;
 
         HttpServer::new(move || {
             App::new()
                 .data(pool.clone())
                 .data(message_sender.clone())
                 .wrap(middleware::Logger::new(&logger_format))
-                .data(
-                    web::JsonConfig::default()
-                        .content_type(|mime| mime == mime::APPLICATION_JSON)
-                        .error_handler(|err, _req| {
-                            error::InternalError::from_response(
-                                "",
-                                HttpResponse::BadRequest().json(ApiError::from(format!("Wrong format: {}", err))),
-                            ).into()
-                        }),
-                )
+                .data(Self::error_handling())
                 .service(web::resource("/health").route(web::get().to_async(HealthController::get)))
                 .service(
                     web::resource("/evaluations/{id}")
@@ -80,21 +71,32 @@ impl Server {
             .run()
     }
 
-    fn get_pool(&self) -> models::Pool {
-        let manager = ConnectionManager::<PgConnection>::new(self.generate_database_url());
-        let pool: models::Pool = r2d2::Pool::builder()
-            .build(manager)
-            .expect("Failed to create pool.");
+    fn error_handling() -> web::JsonConfig {
+        web::JsonConfig::default()
+            .content_type(|mime| mime == mime::APPLICATION_JSON)
+            .error_handler(|err, _req| {
+                error::InternalError::from_response(
+                    "",
+                    HttpResponse::BadRequest().json(ApiError::from(format!("Wrong format: {}", err))),
+                ).into()
+            })
     }
 
-    fn start_message_handlers(&self) -> (MessageSender, MessageListener) {
+    fn get_pool(&self) -> models::Pool {
+        let manager = ConnectionManager::<PgConnection>::new(self.generate_database_url());
+        r2d2::Pool::builder()
+            .build(manager)
+            .expect("Failed to create pool.")
+    }
+
+    fn start_message_handlers(&self, pool: models::Pool) -> io::Result<(MessageSender, MessageListener)> {
         let message_sender = MessageSender::new(&self.config.rabbit_url)
             .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;
-        let message_listener = MessageListener::new(&self.config.rabbit_url, OrganizationRepo::new(Rc::new(pool.clone().get().unwrap())))
+        let message_listener = MessageListener::new(&self.config.rabbit_url, OrganizationRepo::new(Rc::new(pool.get().unwrap())))
             .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;
         message_listener.run();
 
-        (message_sender, message_listener)
+        Ok((message_sender, message_listener))
     }
 
     fn generate_database_url(&self) -> String {

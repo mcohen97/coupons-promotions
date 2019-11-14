@@ -31,8 +31,8 @@ fn main() -> io::Result<()> {
     dotenv::dotenv().ok();
     env_logger::init();
     std::env::set_var("RUST_LOG", "info");
-    let domain = std::env::var("HOST").unwrap_or("127.0.0.1".into());
-    let port = std::env::var("PORT").unwrap_or("8080".into()).parse().expect("Invalid port");
+    let domain = std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".into());
+    let port = std::env::var("PORT").unwrap_or_else(|_| "8080".into()).parse().expect("Invalid port");
     let db_host = std::env::var("DB_HOST").expect("DB_HOST missing");
     let db_user = std::env::var("DB_USER").expect("DB_USER missing");
     let db_password = std::env::var("DB_PASSWORD").expect("DB_PASSWORD missing");

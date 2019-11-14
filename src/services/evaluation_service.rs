@@ -1,4 +1,3 @@
-#[allow(unused_variables)]
 use crate::server::ApiResult;
 use std::collections::HashMap;
 use crate::models::{Promotion, PromotionRepo, PromotionType, PromotionExpression, PromotionReturn};
@@ -20,7 +19,7 @@ impl EvaluationService {
         self.validate_required_attribute(&promotion, required)?;
         self.validate_not_expires(&promotion)?;
 
-        let total = attributes.get("total".into()).map(|v| v.to_owned());
+        let total = attributes.get("total").map(|v| v.to_owned());
         let expr = PromotionExpression::parse(&promotion.code)?;
         let eval_result = expr.evaluate(attributes)?;
 

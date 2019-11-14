@@ -75,7 +75,7 @@ mod tests {
 
         fetched.name = "Another name".into();
         repo.update(&fetched);
-        let mut fetched = repo.find(promo.id).unwrap();
+        let fetched = repo.find(promo.id).unwrap();
         assert_eq!("Another name", fetched.name);
 
         let deleted = repo.delete(promo.id).unwrap();
@@ -95,7 +95,7 @@ mod tests {
             .expect("Failed to create pool.");
         let conn = Rc::new(pool.get().unwrap());
         let repo = PromotionRepo::new(conn);
-        let new_promo = build_promo();
+        let _new_promo = build_promo();
 
         let created = vec![repo.create(&build_promo()).unwrap(); 10];
         let fetched = repo.get().unwrap();

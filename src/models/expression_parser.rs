@@ -1,4 +1,3 @@
-#[allow(unused_variables)]
 use std::collections::HashMap;
 use evalexpr::{build_operator_tree, Node, Context, HashMapContext, Value};
 use crate::server::ApiResult;

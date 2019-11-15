@@ -1,0 +1,25 @@
+version: '3'
+services:
+  db:
+    image: postgres
+    volumes:
+      - ./tmp/db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=coupons
+      - POSTGRES_PASSWORD=coupons
+      - POSTGRES_DB=eval-dev
+    ports:
+      - "8001:5432"
+  web:
+    image: evaluations
+    command: >
+      sh -c "diesel setup --database-url postgres://coupons:coupons@db/eval-dev &&
+      evaluations"
+    volumes:
+      - .:/evaluations
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      - db

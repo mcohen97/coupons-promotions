@@ -29,10 +29,18 @@ impl EvaluationServices {
         let eval_result = expr.evaluate(attributes)?;
 
         let organization_id = promotion.organization_id;
-        Ok(match eval_result {
-            true => EvaluationResultDto::Applies { organization_id, return_type: return_type.to_string(), total_discount: self.calculate_total_discount(total, promotion.get_return())? },
-            false => EvaluationResultDto::DoesntApply { organization_id }
-        })
+        let res = if eval_result {
+            self.after_successful_evaluation_update(promotion.clone())?;
+            EvaluationResultDto::Applies {
+                organization_id,
+                return_type: return_type.to_string(),
+                total_discount: self.calculate_total_discount(total, promotion.get_return())?,
+            }
+        } else {
+            EvaluationResultDto::DoesntApply { organization_id }
+        };
+
+        Ok(res)
     }
 
     fn validate_not_expires(&self, promotion: &Promotion) -> ApiResult<()> {
@@ -85,6 +93,18 @@ impl EvaluationServices {
                 total * (percentage / 100.0)
             }
         })
+    }
+
+    fn after_successful_evaluation_update(&self, promo: Promotion) -> ApiResult<()> {
+        match promo.get_type() {
+            PromotionType::Discount => self.deactivate_promotion(promo)
+            PromotionType::Coupon => Ok(())
+        }
+    }
+
+    fn deactivate_promotion(&self, mut promotion: Promotion) -> ApiResult<()> {
+        promotion.active = false;
+        self.promotions_repo.update(&promotion)
     }
 }
 

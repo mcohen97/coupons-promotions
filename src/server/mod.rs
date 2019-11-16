@@ -20,9 +20,8 @@ use crate::server::promotions_controller::PromotionsController;
 use crate::messages::{MessageSender, MessageListener};
 use std::io::ErrorKind;
 use crate::server::app_key_controller::AppKeyController;
-use crate::models::{OrganizationRepository, PromotionRepository};
+use crate::models::{OrganizationRepository};
 use std::rc::Rc;
-use crate::services::EvaluationServices;
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
@@ -55,15 +54,15 @@ impl Server {
                 .data(Self::error_handling())
                 .service(web::resource("/health").route(web::get().to_async(HealthController::get)))
                 .service(
-                    web::resource("/evaluations/{id}")
-                        .route(web::post().to(EvaluationController::post)),
-                )
-                .service(
                     web::scope("/promotions")
                         .service(
                             web::resource("")
                                 .route(web::post().to(PromotionsController::post))
                                 .route(web::get().to(PromotionsController::get_all))
+                        )
+                        .service(
+                            web::resource("{id}/evaluations")
+                                .route(web::post().to(EvaluationController::post)),
                         )
                         .service(
                             web::resource("{id}")
@@ -108,14 +107,6 @@ impl Server {
         r2d2::Pool::builder()
             .build(manager)
             .expect("Failed to create pool.")
-    }
-    fn setup_services(&self, pool: models::Pool) -> io::Result<EvaluationServices> {
-        let con = Rc::new(pool.get().unwrap());
-        let repo = PromotionRepository::new(con);
-        let eval_service = EvaluationServices::new(repo);
-        // let demo_service = DemographyService::new();
-
-        Ok(eval_service)
     }
 
 

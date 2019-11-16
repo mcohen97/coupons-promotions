@@ -1,64 +1,95 @@
-use actix_web::HttpRequest;
 use crate::server::{ApiResult, ServiceFactory};
 use crate::services::*;
 use actix_web::web::{Json, Data};
 use actix_web::{web, HttpResponse};
 use std::collections::HashMap;
-use http::header;
-use crate::models::{Pool, PromotionReturn};
-use std::error::Error;
+use crate::models::PromotionReturn;
+use std::time::Duration;
+use crate::messages::{EvaluationInfo, DemographyData, Message};
+use crate::messages;
 
 
 pub struct EvaluationController;
 
 impl EvaluationController {
     pub fn post(path: web::Path<i32>, data: Json<EvaluationIn>, fact: Data<ServiceFactory>) -> ApiResult<HttpResponse> {
-        let eval_service = fact.as_services()?.evaluation;
-        let EvaluationIn { required, attributes, demography: _} = data.into_inner();
+        let start = std::time::SystemTime::now();
+        let id = path.into_inner();
+        let Services { evaluation, demographic, message_sender, .. } = fact.as_services()?;
+        let EvaluationIn { required, attributes, demography } = data.into_inner();
 
-        let _eval_result = eval_service.evaluate_promotion(path.into_inner(), required, attributes)?;
+        let eval_result = evaluation.evaluate_promotion(id, required, attributes)?;
+        let response_time = start.elapsed().unwrap();
+        let (demo_response, demo_data) = demographic.build_demographics_if_valid(demography);
+        message_sender.send(Message::PromotionEvaluated(eval_result.to_message(id, response_time, demo_data)));
 
-
-        Ok(HttpResponse::Ok().finish())
-    }
-
-    fn get_authorization(req: &HttpRequest) -> String {
-        req.headers()
-            .get(header::AUTHORIZATION)
-            .map(header::HeaderValue::to_str)
-            .map(|r| match r {
-                Ok(value) => value.to_string(),
-                Err(err) => err.description().to_string()
-            })
-            .unwrap_or("".into())
+        Ok(HttpResponse::Ok().json(eval_result.to_out(demo_response.to_string())))
     }
 }
+
+impl EvaluationResultDto {
+    pub fn to_message(&self, promotion_id: i32, response_time: Duration, demographic_data: Option<DemographyData>) -> messages::EvaluationResult {
+        match self {
+            EvaluationResultDto::Applies { organization_id, total_discount, .. } => messages::EvaluationResult {
+                organization_id: *organization_id,
+                promotion_id,
+                demographic_data,
+                evaluation_info: EvaluationInfo {
+                    total_discounted: Some(*total_discount),
+                    applicable: true,
+                    response_time: response_time.as_millis(),
+                },
+            },
+            EvaluationResultDto::DoesntApply { organization_id } => messages::EvaluationResult {
+                organization_id: *organization_id,
+                promotion_id,
+                demographic_data,
+                evaluation_info: EvaluationInfo {
+                    total_discounted: None,
+                    applicable: false,
+                    response_time: response_time.as_millis(),
+                },
+            }
+        }
+    }
+
+    fn to_out(&self, demography_response: String) -> EvaluationOut {
+        match self {
+            EvaluationResultDto::Applies { total_discount, return_type , ..} => EvaluationOut {
+                is_valid: true,
+                return_type: Some(return_type.to_string()),
+                return_val: Some(*total_discount),
+                demography_response
+            },
+            EvaluationResultDto::DoesntApply { .. } => EvaluationOut {
+                is_valid: true,
+                return_val: None,
+                return_type: None,
+                demography_response
+            }
+        }
+    }
+}
+
 
 #[derive(Serialize, Deserialize)]
 pub struct EvaluationIn {
     pub attributes: HashMap<String, f64>,
     pub demography: Option<DemographyIn>,
-    pub required: RequiredAttribute
+    #[serde(flatten)]
+    pub required: RequiredAttribute,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EvaluationOut {
     pub is_valid: bool,
     pub return_type: Option<String>,
-    pub return_val: Option<f64>
+    pub return_val: Option<f64>,
+    pub demography_response: String
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum EvaluationResult {
     Applies(PromotionReturn),
     DoesntApply,
-}
-
-impl From<EvaluationResult> for EvaluationOut {
-    fn from(res: EvaluationResult) -> Self {
-        match res {
-            EvaluationResult::Applies(_ret) => unreachable!(),
-            EvaluationResult::DoesntApply => EvaluationOut {is_valid: false, return_type: None, return_val: None}
-        }
-    }
 }

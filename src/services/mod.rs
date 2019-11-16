@@ -31,7 +31,7 @@ impl Services {
         let organizations = OrganizationRepository::new(conn.clone());
         let promotions_repo = PromotionRepository::new(conn.clone());
         let coupons_repo = CouponsRepository::new(conn.clone());
-        let evaluation = EvaluationServices::new(promotions_repo.clone());
+        let evaluation = EvaluationServices::new(promotions_repo.clone(), message_sender.clone());
         let demographic = DemographyServices::new();
         let coupons = CouponServices::new(promotions_repo.clone(), coupons_repo.clone());
         let promotions = PromotionService::new(promotions_repo.clone(), organizations.clone(), message_sender.clone());

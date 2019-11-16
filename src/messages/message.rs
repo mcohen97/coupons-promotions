@@ -38,7 +38,7 @@ pub struct EvaluationResult {
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct EvaluationInfo {
     pub applicable: bool,
-    pub response_time: f64,
+    pub response_time: u128,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub total_discounted: Option<f64>,
 }

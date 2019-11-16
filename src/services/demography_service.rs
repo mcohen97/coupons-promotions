@@ -27,7 +27,7 @@ impl DemographyServices {
                 };
                 ("Demographic data was valid".into(), Some(data))
             }
-            Err(e) => (e.get_message(), None)
+            Err(e) => (format!("Demographic data was invalid: {}",e.get_message()).into(), None)
         }
     }
 }

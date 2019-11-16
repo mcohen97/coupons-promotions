@@ -1,11 +1,13 @@
 mod demography_service;
 mod evaluation_service;
 mod promotions_service;
+mod coupon_services;
 
 
 pub use demography_service::*;
 pub use evaluation_service::*;
 pub use promotions_service::*;
+pub use coupon_services::*;
 use crate::models::{Connection, PromotionRepository, OrganizationRepository};
 use std::rc::Rc;
 use crate::messages::MessageSender;

@@ -5,10 +5,9 @@ mod promotions_controller;
 mod app_key_controller;
 mod model_in;
 mod service_factory;
-mod dto;
 
 pub use api_error::ApiError;
-pub use dto::*;
+pub use model_in::*;
 use actix_web::{error, middleware, web, App, HttpResponse, HttpServer};
 use evaluation_controller::EvaluationController;
 use health_controller::HealthController;

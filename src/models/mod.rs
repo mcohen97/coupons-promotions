@@ -11,6 +11,8 @@ mod coupon_uses;
 
 pub use demographics::*;
 pub use promotion::*;
+pub use coupon::*;
+pub use coupon_uses::*;
 pub use promotion_repo::*;
 pub use organization_repo::*;
 pub use new_promotion::*;

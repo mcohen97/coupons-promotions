@@ -2,6 +2,7 @@ mod api_error;
 mod evaluation_controller;
 mod health_controller;
 mod promotions_controller;
+mod coupons_controller;
 mod app_key_controller;
 mod model_in;
 mod service_factory;
@@ -27,6 +28,7 @@ pub type ApiResult<T> = Result<T, ApiError>;
 
 pub use service_factory::ServiceFactory;
 use std::sync::Arc;
+use crate::server::coupons_controller::CouponsController;
 
 pub struct Server {
     config: ServerConfig
@@ -68,6 +70,11 @@ impl Server {
                                 .route(web::put().to(PromotionsController::put))
                                 .route(web::get().to(PromotionsController::get))
                                 .route(web::delete().to(PromotionsController::delete))
+                        )
+                        .service(
+                            web::resource("{id}/coupons")
+                                .route(web::post().to(CouponsController::post))
+                                .route(web::get().to(CouponsController::get))
                         )
                 )
                 .service(

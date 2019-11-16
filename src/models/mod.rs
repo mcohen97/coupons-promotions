@@ -5,6 +5,7 @@ mod expression_parser;
 #[macro_use]
 mod promotion_repo;
 mod organization_repo;
+mod coupons_repo;
 mod new_promotion;
 mod coupon;
 mod coupon_uses;
@@ -17,6 +18,7 @@ pub use promotion_repo::*;
 pub use organization_repo::*;
 pub use new_promotion::*;
 pub use expression_parser::*;
+pub use coupons_repo::*;
 
 use diesel::{r2d2::ConnectionManager, PgConnection};
 use r2d2::PooledConnection;

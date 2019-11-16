@@ -2,13 +2,14 @@ mod demography_service;
 mod evaluation_service;
 mod promotions_service;
 mod coupon_services;
-
+mod dtos;
 
 pub use demography_service::*;
 pub use evaluation_service::*;
 pub use promotions_service::*;
 pub use coupon_services::*;
-use crate::models::{Connection, PromotionRepository, OrganizationRepository};
+pub use dtos::*;
+use crate::models::{Connection, PromotionRepository, OrganizationRepository, CouponsRepository};
 use std::rc::Rc;
 use crate::messages::MessageSender;
 use std::sync::Arc;
@@ -18,8 +19,10 @@ pub struct Services {
     pub evaluation: EvaluationServices,
     pub demographic: DemographyServices,
     pub promotions: PromotionService,
+    pub coupons: CouponServices,
     pub promotions_repo: PromotionRepository,
     pub organizations_repo: OrganizationRepository,
+    pub coupons_repo: CouponsRepository
 }
 
 impl Services {
@@ -27,8 +30,10 @@ impl Services {
         let conn = Rc::new(conn);
         let organizations = OrganizationRepository::new(conn.clone());
         let promotions_repo = PromotionRepository::new(conn.clone());
+        let coupons_repo = CouponsRepository::new(conn.clone());
         let evaluation = EvaluationServices::new(promotions_repo.clone());
         let demographic = DemographyServices::new();
+        let coupons = CouponServices::new(promotions_repo.clone(), coupons_repo.clone());
         let promotions = PromotionService::new(promotions_repo.clone(), organizations.clone(), message_sender.clone());
         Services {
             evaluation,
@@ -36,7 +41,9 @@ impl Services {
             organizations_repo: organizations,
             promotions_repo,
             message_sender,
-            promotions
+            promotions,
+            coupons_repo,
+            coupons
         }
     }
 }

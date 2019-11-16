@@ -1,24 +1,19 @@
 use actix_web::HttpRequest;
-use crate::server::ApiResult;
+use crate::server::{ApiResult, ServiceFactory};
 use crate::services::*;
-use actix_web::web::Json;
+use actix_web::web::{Json, Data};
 use actix_web::{web, HttpResponse};
 use std::collections::HashMap;
 use http::header;
-use crate::models::{PromotionRepository, Pool, PromotionReturn};
-
+use crate::models::{Pool, PromotionReturn};
 use std::error::Error;
-use std::rc::Rc;
 
 
 pub struct EvaluationController;
 
 impl EvaluationController {
-    pub fn post(path: web::Path<i32>, data: Json<EvaluationIn>, _pool: web::Data<Pool>, _req: HttpRequest) -> ApiResult<HttpResponse> {
-        let con = _pool.get().unwrap();
-        let repo = PromotionRepository::new(Rc::new(con));
-        let eval_service = EvaluationServices::new(repo);
-        let _demo_service = DemographyServices::new();
+    pub fn post(path: web::Path<i32>, data: Json<EvaluationIn>, fact: Data<ServiceFactory>) -> ApiResult<HttpResponse> {
+        let eval_service = fact.as_services()?.evaluation;
         let EvaluationIn { required, attributes, demography: _} = data.into_inner();
 
         let _eval_result = eval_service.evaluate_promotion(path.into_inner(), required, attributes)?;

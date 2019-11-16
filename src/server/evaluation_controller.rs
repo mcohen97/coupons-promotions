@@ -5,8 +5,8 @@ use actix_web::web::Json;
 use actix_web::{web, HttpResponse};
 use std::collections::HashMap;
 use http::header;
-use crate::models::{Promotion, PromotionRepository, Pool, PromotionReturn};
-use diesel::RunQueryDsl;
+use crate::models::{PromotionRepository, Pool, PromotionReturn};
+
 use std::error::Error;
 use std::rc::Rc;
 
@@ -14,14 +14,14 @@ use std::rc::Rc;
 pub struct EvaluationController;
 
 impl EvaluationController {
-    pub fn post(path: web::Path<i32>, data: Json<EvaluationIn>, _pool: web::Data<Pool>, req: HttpRequest) -> ApiResult<HttpResponse> {
+    pub fn post(path: web::Path<i32>, data: Json<EvaluationIn>, _pool: web::Data<Pool>, _req: HttpRequest) -> ApiResult<HttpResponse> {
         let con = _pool.get().unwrap();
         let repo = PromotionRepository::new(Rc::new(con));
         let eval_service = EvaluationServices::new(repo);
-        let demo_service = DemographyServices::new();
-        let EvaluationIn { required, attributes, demography} = data.into_inner();
+        let _demo_service = DemographyServices::new();
+        let EvaluationIn { required, attributes, demography: _} = data.into_inner();
 
-        let eval_result = eval_service.evaluate_promotion(path.into_inner(), required, attributes)?;
+        let _eval_result = eval_service.evaluate_promotion(path.into_inner(), required, attributes)?;
 
 
         Ok(HttpResponse::Ok().finish())
@@ -62,7 +62,7 @@ pub enum EvaluationResult {
 impl From<EvaluationResult> for EvaluationOut {
     fn from(res: EvaluationResult) -> Self {
         match res {
-            EvaluationResult::Applies(ret) => unreachable!(),
+            EvaluationResult::Applies(_ret) => unreachable!(),
             EvaluationResult::DoesntApply => EvaluationOut {is_valid: false, return_type: None, return_val: None}
         }
     }

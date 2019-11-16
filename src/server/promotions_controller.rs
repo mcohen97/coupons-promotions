@@ -1,7 +1,7 @@
 use actix_web::{web, HttpResponse};
 use crate::server::{ApiResult, ServiceFactory};
 use actix_web::web::{Json, Data};
-use crate::models::PromotionReturn;
+
 use crate::server::model_in::PromotionIn;
 
 pub struct PromotionsController;

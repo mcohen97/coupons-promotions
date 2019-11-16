@@ -1,14 +1,15 @@
-use actix_web::HttpResponse;
+use actix_web::{HttpResponse};
 use actix_web::ResponseError;
-use core::fmt::Display;
 use iata_types::CityCodeParseError;
 use evalexpr::EvalexprError;
 use std::borrow::Cow;
 use std::error::Error;
+use derive_more::Display;
+use std::fmt::Display;
 
 type Message = Cow<'static, str>;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Display)]
 struct ErrorJson {
     error: Cow<'static, str>
 }
@@ -38,7 +39,7 @@ impl Into<HttpResponse> for ApiError {
 impl ResponseError for ApiError {
     fn error_response(&self) -> HttpResponse {
         match self {
-            ApiError::BadRequest(msg) => HttpResponse::BadRequest().json(ErrorJson::from_message(msg.to_string())),
+            ApiError::BadRequest(msg) => HttpResponse::BadRequest().content_type("application/json").json(ErrorJson::from_message(msg.to_string())),
             ApiError::InternalError(msg) => HttpResponse::InternalServerError().json(ErrorJson::from_message(msg.to_string()))
         }
     }
@@ -95,6 +96,12 @@ impl From<std::time::SystemTimeError> for ApiError {
 impl From<lapin::Error> for ApiError {
     fn from(e: lapin::Error) -> Self {
         ApiError::InternalError(Cow::Owned(e.description().to_string()))
+    }
+}
+
+impl From<r2d2::Error> for ApiError {
+    fn from(e: r2d2::Error) -> Self {
+        ApiError::InternalError(e.description().to_string().into())
     }
 }
 

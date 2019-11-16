@@ -6,6 +6,8 @@ mod expression_parser;
 mod promotion_repo;
 mod organization_repo;
 mod new_promotion;
+mod coupon;
+mod coupon_uses;
 
 pub use demographics::*;
 pub use promotion::*;

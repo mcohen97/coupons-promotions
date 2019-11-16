@@ -10,6 +10,7 @@ extern crate serde_derive;
 extern crate serde_json;
 #[macro_use]
 extern crate log;
+extern crate derive_more;
 extern crate mime;
 extern crate chrono;
 extern crate iso3166_1;
@@ -20,6 +21,7 @@ extern crate evalexpr;
 extern crate env_logger;
 extern crate lapin;
 extern crate lapin_futures;
+
 mod server;
 mod services;
 mod models;
@@ -47,4 +49,3 @@ fn main() -> io::Result<()> {
 
     Ok(())
 }
-

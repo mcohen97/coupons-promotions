@@ -1,13 +1,13 @@
 #![allow(dead_code, unused_variables, unused_imports)]
 
 use actix_web::HttpRequest;
-use crate::server::{ApiResult, ApiError};
+use crate::server::{ApiResult, ApiError, ServiceFactory};
 use crate::services::*;
 use actix_web::web::{Json, Data};
 use actix_web::{web, HttpResponse};
 use std::collections::HashMap;
 use http::header;
-use crate::models::{Promotion, PromotionRepo, Pool, Connection, Demographics};
+use crate::models::{Promotion, PromotionRepository, Pool, Connection, Demographics};
 use diesel::RunQueryDsl;
 use std::error::Error;
 use chrono::Utc;
@@ -23,14 +23,15 @@ use std::sync::Arc;
 pub struct EvaluationController;
 
 impl EvaluationController {
-    pub fn post(id: web::Path<i32>, data: Json<EvaluationIn>, _pool: web::Data<Pool>, sender: web::Data<MessageSender>, req: HttpRequest) -> ApiResult<HttpResponse> {
+    pub fn post(id: web::Path<i32>, data: Json<EvaluationIn>, sender: web::Data<MessageSender>, factory: Data<ServiceFactory>, req: HttpRequest) -> ApiResult<HttpResponse> {
         let start = SystemTime::now();
-        let (eval_service, demo_service) = Self::setup_services(_pool);
+        let services = factory.as_services();
+        let Services {evaluation: eval_services, demographic: demo_services, ..} = services?;
         let EvaluationIn { required, attributes, demographic_data } = data.into_inner();
         let id = id.into_inner();
 
-        let eval_result = eval_service.evaluate_promotion(id, required, attributes)?;
-        let (demo_response, demo) = demo_service.build_demographics_if_valid(demographic_data);
+        let eval_result = eval_services.evaluate_promotion(id, required, attributes)?;
+        let (demo_response, demo) = demo_services.build_demographics_if_valid(demographic_data);
         let res = match eval_result {
             EvaluationResult::Applies { organization_id, total_discount } => EvaluationOut {
                 promotion_id: id,
@@ -58,14 +59,6 @@ impl EvaluationController {
         Ok(HttpResponse::Ok().json(res))
     }
 
-    fn setup_services(pool: Data<Pool>) -> (EvaluationService, DemographyService) {
-        let con = Rc::new(pool.get().unwrap());
-        let repo = Box::new(PromotionRepo::new(con));
-        let eval_service = EvaluationService::new(repo);
-        let demo_service = DemographyService::new();
-
-        return (eval_service, demo_service);
-    }
 
     fn get_authorization(req: &HttpRequest) -> String {
         req.headers()

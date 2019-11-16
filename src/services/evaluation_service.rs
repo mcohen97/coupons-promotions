@@ -1,20 +1,21 @@
 use crate::server::ApiResult;
 use std::collections::HashMap;
-use crate::models::{Promotion, PromotionRepo, PromotionType, PromotionExpression, PromotionReturn};
+use crate::models::{Promotion, PromotionRepository, PromotionType, PromotionExpression, PromotionReturn};
 use crate::server::ApiError;
 use chrono::{Utc};
 
-pub struct EvaluationService {
-    repo: Box<PromotionRepo>
+#[derive(Clone)]
+pub struct EvaluationServices{
+    promotions_repo: PromotionRepository
 }
 
-impl EvaluationService {
-    pub fn new(repo: Box<PromotionRepo>) -> Self {
-        Self { repo }
+impl EvaluationServices {
+    pub fn new(repo: PromotionRepository) -> Self {
+        Self { promotions_repo: repo }
     }
 
     pub fn evaluate_promotion(&self, promotion_id: i32, required: RequiredAttribute, attributes: HashMap<String, f64>) -> ApiResult<EvaluationResult> {
-        let promotion = self.repo.find(promotion_id)?;
+        let promotion = self.promotions_repo.find(promotion_id)?;
         self.validate_promotion_is_active(&promotion)?;
         self.validate_required_attribute(&promotion, required)?;
         self.validate_not_expires(&promotion)?;
@@ -48,6 +49,10 @@ impl EvaluationService {
         } else {
             Ok(())
         }
+    }
+
+    fn validate_organization_exists(&self, org_id: i32) -> ApiResult<()> {
+        self.promotions_repo.find(org_id).map(|_| ())
     }
 
     fn validate_required_attribute(&self, promotion: &Promotion, required: RequiredAttribute) -> ApiResult<()> {

@@ -4,8 +4,11 @@ mod health_controller;
 mod promotions_controller;
 mod app_key_controller;
 mod model_in;
+mod service_factory;
+mod dto;
 
 pub use api_error::ApiError;
+pub use dto::*;
 use actix_web::{error, middleware, web, App, HttpResponse, HttpServer};
 use evaluation_controller::EvaluationController;
 use health_controller::HealthController;
@@ -17,10 +20,14 @@ use crate::server::promotions_controller::PromotionsController;
 use crate::messages::{MessageSender, MessageListener};
 use std::io::ErrorKind;
 use crate::server::app_key_controller::AppKeyController;
-use crate::models::OrganizationRepo;
+use crate::models::{OrganizationRepository, PromotionRepository};
 use std::rc::Rc;
+use crate::services::EvaluationServices;
 
 pub type ApiResult<T> = Result<T, ApiError>;
+
+pub use service_factory::ServiceFactory;
+use std::sync::Arc;
 
 pub struct Server {
     config: ServerConfig
@@ -37,11 +44,12 @@ impl Server {
 
         let pool = self.get_pool();
         let (message_sender, _message_listener) = self.start_message_handlers(pool.clone())?;
+        let arc_sender = Arc::new(message_sender.clone());
 
         HttpServer::new(move || {
             App::new()
-                .data(pool.clone())
                 .data(message_sender.clone())
+                .data(ServiceFactory::new(Self::get_pool_s(), arc_sender.clone()))
                 .wrap(middleware::Logger::new(&logger_format))
                 .data(Self::error_handling())
                 .service(web::resource("/health").route(web::get().to_async(HealthController::get)))
@@ -89,10 +97,26 @@ impl Server {
             .expect("Failed to create pool.")
     }
 
+    fn get_pool_s() -> models::Pool {
+        let manager = ConnectionManager::<PgConnection>::new("postgres://coupons:coupons@localhost/eval-dev");
+        r2d2::Pool::builder()
+            .build(manager)
+            .expect("Failed to create pool.")
+    }
+    fn setup_services(&self, pool: models::Pool) -> io::Result<EvaluationServices> {
+        let con = Rc::new(pool.get().unwrap());
+        let repo = PromotionRepository::new(con);
+        let eval_service = EvaluationServices::new(repo);
+        // let demo_service = DemographyService::new();
+
+        Ok(eval_service)
+    }
+
+
     fn start_message_handlers(&self, pool: models::Pool) -> io::Result<(MessageSender, MessageListener)> {
         let message_sender = MessageSender::new(&self.config.rabbit_url)
             .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;
-        let message_listener = MessageListener::new(&self.config.rabbit_url, OrganizationRepo::new(Rc::new(pool.get().unwrap())))
+        let message_listener = MessageListener::new(&self.config.rabbit_url, OrganizationRepository::new(Rc::new(pool.get().unwrap())))
             .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;
         message_listener.run();
 

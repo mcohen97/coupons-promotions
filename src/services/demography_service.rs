@@ -2,11 +2,11 @@ use crate::models::Demographics;
 use std::borrow::Cow;
 use crate::messages::{DemographyData};
 
-pub struct DemographyService;
+pub struct DemographyServices;
 
-impl DemographyService {
+impl DemographyServices {
     pub fn new() -> Self {
-        DemographyService {}
+        DemographyServices {}
     }
 
     pub fn build_demographics_if_valid(&self, data: Option<DemographyIn>) -> (Cow<'static, str>, Option<DemographyData>) {

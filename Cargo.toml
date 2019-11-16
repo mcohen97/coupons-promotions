@@ -26,11 +26,7 @@ env_logger = "0.7.1"
 lapin-futures = "^0.28"
 lapin = "0.28.2"
 log = "0.4"
-# Add openssl-sys as a direct dependency so it can be cross compiled to
-# x86_64-unknown-linux-musl using the "vendored" feature below
-# openssl-sys = "*"
+derive_more = "0.15.0"
 
-# [features]
-# Force openssl-sys to staticly link in the openssl library. Necessary when
-# cross compiling to x86_64-unknown-linux-musl.
-# vendored = ["openssl-sys/vendored"]
+[dev_dependencies]
+speculate = "*"

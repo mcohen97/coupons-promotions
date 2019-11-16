@@ -4,13 +4,14 @@ use diesel::prelude::*;
 use crate::schema::promotions::dsl::promotions;
 use std::rc::Rc;
 
-pub struct PromotionRepo {
+#[derive(Clone)]
+pub struct PromotionRepository {
     conn: Rc<Connection>
 }
 
-impl PromotionRepo {
+impl PromotionRepository {
     pub fn new(conn: Rc<Connection>) -> Self {
-        PromotionRepo { conn }
+        PromotionRepository { conn }
     }
 
     pub fn get(&self) -> ApiResult<Vec<Promotion>> {
@@ -63,7 +64,7 @@ mod tests {
             .build(manager)
             .expect("Failed to create pool.");
         let conn = Rc::new(pool.get().unwrap());
-        let repo = PromotionRepo::new(conn);
+        let repo = PromotionRepository::new(conn);
         let new_promo = build_promo();
 
         let promo = repo.create(&new_promo).unwrap();
@@ -94,7 +95,7 @@ mod tests {
             .build(manager)
             .expect("Failed to create pool.");
         let conn = Rc::new(pool.get().unwrap());
-        let repo = PromotionRepo::new(conn);
+        let repo = PromotionRepository::new(conn);
         let _new_promo = build_promo();
 
         let created = vec![repo.create(&build_promo()).unwrap(); 10];

@@ -1,84 +1,43 @@
 use actix_web::{web, HttpResponse};
-use crate::server::ApiResult;
-use actix_web::web::Json;
-use crate::models::{NewPromotion, Pool, Promotion, PromotionRepo, PromotionExpression};
-use std::rc::Rc;
-use crate::server::model_in::*;
-use crate::messages::{MessageSender, Message};
+use crate::server::{ApiResult, ServiceFactory, PromotionIn};
+use actix_web::web::{Json, Data};
 
 pub struct PromotionsController;
 
 impl PromotionsController {
-    pub fn post(data: Json<PromotionIn>, pool: web::Data<Pool>, sender: web::Data<MessageSender>) -> ApiResult<HttpResponse> {
-        let repo = Self::setup_repo(pool);
-        let new_promotion = Self::build_new_promotion(data);
-        Self::validate_code(&new_promotion.code)?;
-        let created = repo.create(&new_promotion)?;
+    pub fn post(data: Json<PromotionIn>, services: Data<ServiceFactory>) -> ApiResult<HttpResponse> {
+        let service = services.as_services()?.promotions;
+        let created = service.create(data.into_inner())?;
 
-        sender.send(Message::PromotionCreated(created.clone()));
         Ok(HttpResponse::Created().json(created))
     }
 
-    pub fn put(id: web::Path<i32>, data: Json<PromotionIn>, pool: web::Data<Pool>, sender: web::Data<MessageSender>) -> ApiResult<HttpResponse> {
-        let repo = Self::setup_repo(pool);
-        let id = id.into_inner();
+    pub fn put(id: web::Path<i32>, data: Json<PromotionIn>, services: Data<ServiceFactory>) -> ApiResult<HttpResponse> {
+        let service = services.as_services()?.promotions;
+        let updated = service.update(id.into_inner(), data.into_inner())?;
 
-        let mut promotion = repo.find(id)?;
-        let PromotionIn { name, code, return_type, return_value, promotion_type, organization_id, expiration } = data.into_inner();
-        promotion = Promotion { name, code: code.to_lowercase(), return_type: return_type.to_string(), return_value, type_: promotion_type.to_string(), organization_id, expiration, ..promotion };
-        Self::validate_code(&promotion.code)?;
-        repo.update(&promotion)?;
-
-        sender.send(Message::PromotionUpdate(promotion.clone()));
-        Ok(HttpResponse::Ok().json(promotion))
+        Ok(HttpResponse::Ok().json(updated))
     }
 
-    pub fn delete(id: web::Path<i32>, pool: web::Data<Pool>, sender: web::Data<MessageSender>) -> ApiResult<HttpResponse> {
-        let repo = Self::setup_repo(pool);
-        let id = id.into_inner();
-        repo.delete(id)?;
+    pub fn delete(id: web::Path<i32>, services: Data<ServiceFactory>) -> ApiResult<HttpResponse> {
+        let service = services.as_services()?.promotions;
+        service.delete(id.into_inner())?;
 
-        sender.send(Message::PromotionDeleted(id.into()));
         Ok(HttpResponse::Ok().finish())
     }
 
-    pub fn get(id: web::Path<i32>, pool: web::Data<Pool>) -> ApiResult<HttpResponse> {
-        let repo = Self::setup_repo(pool);
-        let id = id.into_inner();
-        let promo = repo.find(id)?;
+    pub fn get(id: web::Path<i32>, services: Data<ServiceFactory>) -> ApiResult<HttpResponse> {
+        let service = services.as_services()?.promotions;
+        let promotion = service.get(id.into_inner())?;
 
-        Ok(HttpResponse::Ok().json(&promo))
+        Ok(HttpResponse::Ok().json(&promotion))
     }
 
-    pub fn get_all(pool: web::Data<Pool>) -> ApiResult<HttpResponse> {
-        let repo = Self::setup_repo(pool);
-        let promos = repo.get()?;
+    pub fn get_all(services: Data<ServiceFactory>) -> ApiResult<HttpResponse> {
+        let service = services.as_services()?.promotions;
+        let promotion = service.get_all()?;
 
-        Ok(HttpResponse::Ok().json(&promos))
-    }
-
-    fn validate_code(code: &str) -> ApiResult<()> {
-        PromotionExpression::parse(code)?;
-        Ok(())
-    }
-
-    fn build_new_promotion(data: Json<PromotionIn>) -> NewPromotion {
-        let PromotionIn { name, code, return_type, return_value, promotion_type, organization_id, expiration } = data.into_inner();
-        let ret = return_type.get_return(return_value);
-        NewPromotion::new(
-            name,
-            code.to_lowercase(),
-            true,
-            ret,
-            promotion_type,
-            organization_id,
-            expiration,
-        )
-    }
-
-    fn setup_repo(pool: web::Data<Pool>) -> PromotionRepo {
-        let con = Rc::new(pool.get().unwrap());
-        PromotionRepo::new(con)
+        Ok(HttpResponse::Ok().json(&promotion))
     }
 }
 

@@ -6,13 +6,13 @@ use diesel::{RunQueryDsl, QueryDsl};
 use crate::models::organization::Organization;
 
 #[derive(Clone)]
-pub struct OrganizationRepo {
+pub struct OrganizationRepository {
     conn: Rc<Connection>
 }
 
-impl OrganizationRepo {
+impl OrganizationRepository {
     pub fn new(conn: Rc<Connection>) -> Self {
-        OrganizationRepo { conn }
+        OrganizationRepository { conn }
     }
 
 

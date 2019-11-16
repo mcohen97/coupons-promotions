@@ -7,7 +7,7 @@ use crate::messages::message_handler::MessageHandler;
 use lapin_futures::Queue;
 use lapin::message::Delivery;
 use crate::lapin::types::FieldTable;
-use crate::models::OrganizationRepo;
+use crate::models::OrganizationRepository;
 use std::error::Error as StdError;
 
 static EXCHANGE: &str = "amq.topic";
@@ -16,12 +16,12 @@ static QUEUE: &str = "queue1";
 #[derive(Clone)]
 pub struct MessageListener {
     handler: MessageHandler,
-    repo: OrganizationRepo,
+    repo: OrganizationRepository,
     queue: Queue,
 }
 
 impl MessageListener {
-    pub fn new(url: &str, repo: OrganizationRepo) -> Result<Self, lapin::Error> {
+    pub fn new(url: &str, repo: OrganizationRepository) -> Result<Self, lapin::Error> {
         let handler = MessageHandler::new(url, "Message listener")?;
         let queue = handler.channel.queue_declare(QUEUE, QueueDeclareOptions::default(), FieldTable::default()).wait()?;
         handler.channel.queue_bind(queue.name().as_str(), EXCHANGE, "organization.*", QueueBindOptions::default(), FieldTable::default()).wait()?;
@@ -49,7 +49,7 @@ impl MessageListener {
             }).map_err(|e| error!("{}", e))
     }
 
-    fn consume_message(message: &Delivery, repo: OrganizationRepo) -> Result<(), String> {
+    fn consume_message(message: &Delivery, repo: OrganizationRepository) -> Result<(), String> {
         let payload = std::str::from_utf8(&message.data).map_err(|e| e.description().to_string())?;
         let data: Id = serde_json::from_str(payload).map_err(|e| e.description().to_string())?;
 

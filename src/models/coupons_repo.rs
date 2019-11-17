@@ -3,7 +3,7 @@ use crate::schema::coupons::dsl::coupons;
 use crate::schema::coupons::dsl::*;
 use crate::models::{Connection, Coupon, NewCoupon};
 use std::rc::Rc;
-use crate::server::ApiResult;
+use crate::server::{ApiResult, ApiError};
 use diesel::Connection as DieselConn;
 
 #[derive(Clone)]
@@ -30,6 +30,19 @@ impl CouponsRepository {
 
             result
         })
+    }
+
+    pub fn find(&self, promotion: i32, coupon: &str) -> ApiResult<Coupon> {
+        let split: Vec<&str> = coupon.split('#').collect();
+        if split.len() != 2 {
+            return Err(ApiError::from("Invalid coupon code"));
+        }
+        let _code = split[0].to_string();
+        let _id: i32 = split[1].parse().map_err( |_| ApiError::from("Invalid coupon code"))?;
+
+        Ok(coupons.find((_id, promotion))
+            .first(&*self.conn)?
+        )
     }
 
     pub fn get_by_promotion(&self, promotion: i32) -> ApiResult<Vec<Coupon>> {

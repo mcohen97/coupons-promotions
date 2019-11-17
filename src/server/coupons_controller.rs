@@ -29,6 +29,7 @@ pub struct GenerateCouponsIn {
     pub coupon_code: String,
     pub quantity: u32,
     pub expiration: DateTime,
+    pub max_uses: i32,
 }
 
 impl GenerateCouponsIn {
@@ -38,6 +39,7 @@ impl GenerateCouponsIn {
             coupon_code: self.coupon_code,
             expiration: self.expiration,
             quantity: self.quantity,
+            max_uses: self.max_uses,
         }
     }
 }

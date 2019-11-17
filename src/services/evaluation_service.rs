@@ -1,26 +1,29 @@
 use crate::server::ApiResult;
 use std::collections::HashMap;
-use crate::models::{Promotion, PromotionRepository, PromotionType, PromotionExpression, PromotionReturn};
+use crate::models::{Promotion, PromotionRepository, PromotionType, PromotionExpression, PromotionReturn, CouponsRepository, CouponUsesRepository, Coupon};
 use crate::server::ApiError;
 use chrono::Utc;
 use crate::messages::MessageSender;
 use std::sync::Arc;
+use crate::services::EvaluationSpecificDto;
 
 #[derive(Clone)]
 pub struct EvaluationServices {
     promotions_repo: PromotionRepository,
+    coupon_repo: CouponsRepository,
+    coupon_uses_repo: CouponUsesRepository,
     message_sender: Arc<MessageSender>,
 }
 
 impl EvaluationServices {
-    pub fn new(repo: PromotionRepository, message_sender: Arc<MessageSender>) -> Self {
-        Self { promotions_repo: repo, message_sender }
+    pub fn new(promotions_repo: PromotionRepository, coupon_repo: CouponsRepository, coupon_uses_repo: CouponUsesRepository, message_sender: Arc<MessageSender>) -> Self {
+        Self { promotions_repo, message_sender, coupon_uses_repo, coupon_repo }
     }
 
-    pub fn evaluate_promotion(&self, promotion_id: i32, required: RequiredAttribute, attributes: HashMap<String, f64>) -> ApiResult<EvaluationResultDto> {
+    pub fn evaluate_promotion(&self, promotion_id: i32, specific_data: EvaluationSpecificDto, attributes: HashMap<String, f64>) -> ApiResult<EvaluationResultDto> {
         let promotion = self.promotions_repo.find(promotion_id)?;
         self.validate_promotion_is_active(&promotion)?;
-        self.validate_required_attribute(&promotion, required)?;
+        self.validate_specific_data(&promotion, &specific_data)?;
         self.validate_not_expires(&promotion)?;
 
         let total = attributes.get("total").map(|v| v.to_owned());
@@ -30,7 +33,7 @@ impl EvaluationServices {
 
         let organization_id = promotion.organization_id;
         let res = if eval_result {
-            self.after_successful_evaluation_update(promotion.clone())?;
+            self.after_successful_evaluation_update(promotion.clone(), &specific_data)?;
             EvaluationResultDto::Applies {
                 organization_id,
                 return_type: return_type.to_string(),
@@ -66,22 +69,34 @@ impl EvaluationServices {
         self.promotions_repo.find(org_id).map(|_| ())
     }
 
-    fn validate_required_attribute(&self, promotion: &Promotion, required: RequiredAttribute) -> ApiResult<()> {
-        match promotion.get_type() {
-            PromotionType::Discount => {
-                if let RequiredAttribute::TransactionId(_) = required {
-                    Ok(())
-                } else {
-                    Err(ApiError::from("Missing transaction id"))
+    fn validate_specific_data(&self, promotion: &Promotion, specific_data: &EvaluationSpecificDto) -> ApiResult<()> {
+        match specific_data {
+            EvaluationSpecificDto::Discount { transaction_id: _ } => { // TODO: Add transaction id validation
+                if let PromotionType::Coupon = promotion.get_type() {
+                    return Err(ApiError::from("Promotion type specific data doesnt match with promotion type"));
                 }
+                Ok(())
             }
-            PromotionType::Coupon => {
-                if let RequiredAttribute::CouponCode(_) = required {
-                    Ok(())
-                } else {
-                    Err(ApiError::from("Missing coupon code"))
+            EvaluationSpecificDto::Coupon { user, coupon_code } => {
+                if let PromotionType::Discount = promotion.get_type() {
+                    return Err(ApiError::from("Promotion type specific data doesnt match with promotion type"));
                 }
+                let coupon = self.get_coupon(promotion.id, &coupon_code)?;
+                self.validate_coupon_has_uses(&coupon, *user)
             }
+        }
+    }
+
+    fn get_coupon(&self, promotion_id: i32, coupon_code: &str) -> ApiResult<Coupon> {
+        self.coupon_repo.find(promotion_id, coupon_code)
+    }
+
+    fn validate_coupon_has_uses(&self, coupon: &Coupon, user: i32) -> ApiResult<()> {
+        let uses = self.coupon_uses_repo.find_or_create(coupon.promotion_id, coupon.id, user)?;
+        if coupon.can_keep_being_used(&uses) {
+            Ok(())
+        } else {
+            Err(ApiError::from(format!("User {} has reached their uses limit", user)))
         }
     }
 
@@ -95,10 +110,16 @@ impl EvaluationServices {
         })
     }
 
-    fn after_successful_evaluation_update(&self, promo: Promotion) -> ApiResult<()> {
-        match promo.get_type() {
-            PromotionType::Discount => self.deactivate_promotion(promo),
-            PromotionType::Coupon => unimplemented!()
+    fn after_successful_evaluation_update(&self, promotion: Promotion, specific_data: &EvaluationSpecificDto) -> ApiResult<()> {
+        match specific_data {
+            EvaluationSpecificDto::Discount { transaction_id: _ } => self.deactivate_promotion(promotion),
+            EvaluationSpecificDto::Coupon { user, coupon_code } => {
+                let coupon = self.get_coupon(promotion.id, &coupon_code)?;
+                let mut uses = self.coupon_uses_repo.find_or_create(coupon.promotion_id, coupon.id, *user)?;
+                uses.uses += 1;
+                self.coupon_uses_repo.update(&uses)?;
+                Ok(())
+            }
         }
     }
 

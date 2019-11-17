@@ -4,6 +4,7 @@ table! {
         coupon_code -> Varchar,
         promotion_id -> Int4,
         expiration -> Timestamptz,
+        max_uses -> Int4,
     }
 }
 
@@ -12,6 +13,7 @@ table! {
         coupon_id -> Int4,
         promotion_id -> Int4,
         external_user -> Int4,
+        uses -> Int4,
     }
 }
 

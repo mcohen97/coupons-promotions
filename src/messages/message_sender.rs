@@ -10,13 +10,14 @@ static EXCHANGE: &str = "amq.topic";
 
 #[derive(Clone)]
 pub struct MessageSender {
-    handler: MessageHandler
+    handler: MessageHandler,
+    url: String
 }
 
 impl MessageSender {
     pub fn new(url: &str) -> Result<Self, lapin::Error> {
         let handler = MessageHandler::new(url, "Message sender")?;
-        Ok(MessageSender { handler })
+        Ok(MessageSender { handler, url: url.to_string() })
     }
 
     pub fn send(&self, message: Message) {

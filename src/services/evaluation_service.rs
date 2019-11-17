@@ -97,8 +97,8 @@ impl EvaluationServices {
 
     fn after_successful_evaluation_update(&self, promo: Promotion) -> ApiResult<()> {
         match promo.get_type() {
-            PromotionType::Discount => self.deactivate_promotion(promo)
-            PromotionType::Coupon => Ok(())
+            PromotionType::Discount => self.deactivate_promotion(promo),
+            PromotionType::Coupon => unimplemented!()
         }
     }
 

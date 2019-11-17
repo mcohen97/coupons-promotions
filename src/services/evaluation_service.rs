@@ -1,6 +1,6 @@
 use crate::server::ApiResult;
 use std::collections::HashMap;
-use crate::models::{Promotion, PromotionRepository, PromotionType, PromotionExpression, PromotionReturn, CouponsRepository, CouponUsesRepository, Coupon, TransactionRepository, Transaction, AppKeyRepo};
+use crate::models::{Promotion, PromotionRepository, PromotionType, PromotionExpression, PromotionReturn, CouponsRepository, CouponUsesRepository, Coupon, TransactionRepository, Transaction, AppKeyRepo, DateTime};
 use crate::server::ApiError;
 use chrono::Utc;
 use crate::messages::MessageSender;
@@ -27,7 +27,7 @@ impl EvaluationServices {
         self.appkey_repo.validate_token_permits_promotion(&promotion, token)?;
         self.validate_promotion_is_active(&promotion)?;
         self.validate_specific_data(&promotion, &specific_data)?;
-        self.validate_not_expires(&promotion)?;
+        self.validate_not_expires(promotion.expiration)?;
 
         let total = attributes.get("total").map(|v| v.to_owned());
         let return_type = &promotion.return_type;
@@ -49,11 +49,11 @@ impl EvaluationServices {
         Ok(res)
     }
 
-    fn validate_not_expires(&self, promotion: &Promotion) -> ApiResult<()> {
+    fn validate_not_expires(&self, expiration: DateTime) -> ApiResult<()> {
         let now = Utc::now();
-        let expiration_has_passed = now > promotion.expiration;
+        let expiration_has_passed = now > expiration;
         if expiration_has_passed {
-            let diff = now - promotion.expiration;
+            let diff = now - expiration;
             Err(ApiError::BadRequest(format!("Coupon expired {} hours ago", diff.num_hours()).into()))
         } else {
             Ok(())
@@ -81,6 +81,7 @@ impl EvaluationServices {
                 if self.transaction_repo.exists(*transaction_id)? {
                     return Err(ApiError::from("Transaction id has already been used"));
                 }
+
                 Ok(())
             }
             EvaluationSpecificDto::Coupon { user, coupon_code } => {
@@ -88,6 +89,7 @@ impl EvaluationServices {
                     return Err(ApiError::from("Promotion type specific data doesnt match with promotion type"));
                 }
                 let coupon = self.get_coupon(promotion.id, &coupon_code)?;
+                self.validate_not_expires(coupon.expiration)?;
                 self.validate_coupon_has_uses(&coupon, *user)
             }
         }

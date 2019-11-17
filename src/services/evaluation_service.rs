@@ -12,12 +12,12 @@ pub struct EvaluationServices {
     promotions_repo: PromotionRepository,
     coupon_repo: CouponsRepository,
     coupon_uses_repo: CouponUsesRepository,
-    transaction_repo:  TransactionRepository,
+    transaction_repo: TransactionRepository,
     message_sender: Arc<MessageSender>,
 }
 
 impl EvaluationServices {
-    pub fn new(promotions_repo: PromotionRepository, coupon_repo: CouponsRepository, coupon_uses_repo: CouponUsesRepository, transaction_repo:  TransactionRepository,message_sender: Arc<MessageSender>) -> Self {
+    pub fn new(promotions_repo: PromotionRepository, coupon_repo: CouponsRepository, coupon_uses_repo: CouponUsesRepository, transaction_repo: TransactionRepository, message_sender: Arc<MessageSender>) -> Self {
         Self { promotions_repo, message_sender, coupon_uses_repo, coupon_repo, transaction_repo }
     }
 
@@ -118,14 +118,13 @@ impl EvaluationServices {
         match specific_data {
             EvaluationSpecificDto::Discount { transaction_id } => {
                 // self.deactivate_promotion(promotion)
-                self.transaction_repo.create(&Transaction {id: *transaction_id})?;
+                self.transaction_repo.create(&Transaction { id: *transaction_id })?;
                 Ok(())
-            },
+            }
             EvaluationSpecificDto::Coupon { user, coupon_code } => {
                 let coupon = self.get_coupon(promotion.id, &coupon_code)?;
-                let mut uses = self.coupon_uses_repo.find_or_create(coupon.promotion_id, coupon.id, *user)?;
-                uses.uses += 1;
-                self.coupon_uses_repo.update(&uses)?;
+                let uses = self.coupon_uses_repo.find_or_create(coupon.promotion_id, coupon.id, *user)?;
+                self.coupon_uses_repo.add_use(&uses)?;
                 Ok(())
             }
         }

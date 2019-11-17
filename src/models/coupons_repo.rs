@@ -40,9 +40,14 @@ impl CouponsRepository {
         let _code = split[0].to_string();
         let _id: i32 = split[1].parse().map_err( |_| ApiError::from("Invalid coupon code"))?;
 
-        Ok(coupons.find((_id, promotion))
-            .first(&*self.conn)?
-        )
+        let query = coupons.find((_id, promotion))
+            .first(&*self.conn);
+        if let Err(diesel::NotFound) = query {
+            Err(ApiError::from(format!("Coupon {} was not found", coupon)))
+        }
+        else {
+            Ok(query?)
+        }
     }
 
     pub fn get_by_promotion(&self, promotion: i32) -> ApiResult<Vec<Coupon>> {

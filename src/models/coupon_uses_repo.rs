@@ -1,4 +1,5 @@
 use crate::schema::coupon_uses::dsl::coupon_uses;
+use crate::schema::coupon_uses::*;
 use diesel::prelude::*;
 use crate::models::{Connection, CouponUses};
 use std::rc::Rc;
@@ -30,9 +31,10 @@ impl CouponUsesRepository {
         Ok(diesel::insert_into(coupon_uses).values(c_uses).get_result(&*self.conn)?)
     }
 
-    pub fn update(&self, c_uses: &CouponUses) -> ApiResult<CouponUses> {
-        Ok(diesel::update(coupon_uses)
-            .set(c_uses)
+    pub fn add_use(&self, c_uses: &CouponUses) -> ApiResult<CouponUses> {
+        let find = coupon_uses.find((c_uses.coupon_id, c_uses.promotion_id, c_uses.external_user));
+        Ok(diesel::update(find)
+            .set(uses.eq(uses + 1))
             .get_result(&*self.conn)?
         )
     }

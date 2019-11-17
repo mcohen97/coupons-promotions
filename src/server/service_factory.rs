@@ -7,11 +7,11 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub struct ServiceFactory {
     pool: models::Pool,
-    message_sender: Arc<MessageSender>,
+    message_sender: MessageSender,
 }
 
 impl ServiceFactory {
-    pub fn new(pool: models::Pool, message_sender: Arc<MessageSender>) -> Self {
+    pub fn new(pool: models::Pool, message_sender: MessageSender) -> Self {
         ServiceFactory { pool, message_sender }
     }
 

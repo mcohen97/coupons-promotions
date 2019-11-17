@@ -12,7 +12,7 @@ pub enum Message {
 }
 
 impl Message {
-    pub fn send(self, sender: Arc<MessageSender>) {
+    pub fn send(self, sender: MessageSender) {
         sender.send(self)
     }
 

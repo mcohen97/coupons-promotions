@@ -6,11 +6,11 @@ use std::sync::Arc;
 pub struct PromotionService {
     promotions_repo: PromotionRepository,
     organization_repo: OrganizationRepository,
-    message_sender: Arc<MessageSender>,
+    message_sender: MessageSender,
 }
 
 impl PromotionService {
-    pub fn new(promotions_repo: PromotionRepository, organization_repo: OrganizationRepository, message_sender: Arc<MessageSender>) -> Self {
+    pub fn new(promotions_repo: PromotionRepository, organization_repo: OrganizationRepository, message_sender: MessageSender) -> Self {
         PromotionService { promotions_repo, organization_repo, message_sender }
     }
 

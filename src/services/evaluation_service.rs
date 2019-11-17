@@ -14,11 +14,11 @@ pub struct EvaluationServices {
     coupon_uses_repo: CouponUsesRepository,
     transaction_repo: TransactionRepository,
     appkey_repo: AppKeyRepo,
-    message_sender: Arc<MessageSender>,
+    message_sender: MessageSender,
 }
 
 impl EvaluationServices {
-    pub fn new(promotions_repo: PromotionRepository, coupon_repo: CouponsRepository, coupon_uses_repo: CouponUsesRepository, transaction_repo: TransactionRepository, appkey_repo: AppKeyRepo, message_sender: Arc<MessageSender>) -> Self {
+    pub fn new(promotions_repo: PromotionRepository, coupon_repo: CouponsRepository, coupon_uses_repo: CouponUsesRepository, transaction_repo: TransactionRepository, appkey_repo: AppKeyRepo, message_sender: MessageSender) -> Self {
         Self { promotions_repo, message_sender, coupon_uses_repo, coupon_repo, appkey_repo, transaction_repo }
     }
 

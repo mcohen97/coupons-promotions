@@ -17,17 +17,18 @@ use diesel::r2d2::ConnectionManager;
 use diesel::PgConnection;
 use crate::models;
 use crate::server::promotions_controller::PromotionsController;
-use crate::messages::{MessageSender, MessageListener};
+use crate::messages::{MessageSender, MessageListener, RabbitSender, Message};
 use std::io::ErrorKind;
 use crate::server::app_key_controller::AppKeyController;
-use crate::models::{OrganizationRepository};
+use crate::models::OrganizationRepository;
 use std::rc::Rc;
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
 pub use service_factory::ServiceFactory;
-use std::sync::Arc;
+use std::sync::{Arc, mpsc};
 use crate::server::coupons_controller::CouponsController;
+use std::sync::mpsc::{Sender, Receiver};
 
 pub struct Server {
     config: ServerConfig
@@ -48,8 +49,8 @@ impl Server {
 
         HttpServer::new(move || {
             App::new()
-                .data(message_sender.clone())
-                .data(ServiceFactory::new(Self::get_pool_s(), arc_sender.clone()))
+                //.data(message_sender.clone())
+                .data(ServiceFactory::new(Self::get_pool_s(), message_sender.clone()))
                 .wrap(middleware::Logger::new(&logger_format))
                 .data(Self::error_handling())
                 .service(web::resource("/health").route(web::get().to_async(HealthController::get)))
@@ -111,8 +112,13 @@ impl Server {
 
 
     fn start_message_handlers(&self, pool: models::Pool) -> io::Result<(MessageSender, MessageListener)> {
-        let message_sender = MessageSender::new(&self.config.rabbit_url)
+        let (tx, rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
+        let mut rabbbit = RabbitSender::new(&self.config.rabbit_url, rx)
             .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;
+        std::thread::spawn(move || {
+            rabbbit.start();
+        });
+        let message_sender = MessageSender::new(tx.clone());
         let message_listener = MessageListener::new(&self.config.rabbit_url, OrganizationRepository::new(Rc::new(pool.get().unwrap())))
             .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;
         message_listener.run();

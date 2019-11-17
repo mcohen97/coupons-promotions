@@ -5,7 +5,7 @@ use std::sync::Arc;
 use std::rc::Rc;
 
 pub struct Services {
-    pub message_sender: Arc<MessageSender>,
+    pub message_sender: MessageSender,
     pub evaluation: EvaluationServices,
     pub demographic: DemographyServices,
     pub promotions: PromotionService,
@@ -19,7 +19,7 @@ pub struct Services {
 }
 
 impl Services {
-    pub fn new(conn: Connection, message_sender: Arc<MessageSender>) -> Services {
+    pub fn new(conn: Connection, message_sender: MessageSender) -> Services {
         let conn = Rc::new(conn);
         let organizations = OrganizationRepository::new(conn.clone());
         let promotions_repo = PromotionRepository::new(conn.clone());

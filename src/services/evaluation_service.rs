@@ -1,6 +1,6 @@
 use crate::server::ApiResult;
 use std::collections::HashMap;
-use crate::models::{Promotion, PromotionRepository, PromotionType, PromotionExpression, PromotionReturn, CouponsRepository, CouponUsesRepository, Coupon};
+use crate::models::{Promotion, PromotionRepository, PromotionType, PromotionExpression, PromotionReturn, CouponsRepository, CouponUsesRepository, Coupon, TransactionRepository, Transaction};
 use crate::server::ApiError;
 use chrono::Utc;
 use crate::messages::MessageSender;
@@ -12,12 +12,13 @@ pub struct EvaluationServices {
     promotions_repo: PromotionRepository,
     coupon_repo: CouponsRepository,
     coupon_uses_repo: CouponUsesRepository,
+    transaction_repo:  TransactionRepository,
     message_sender: Arc<MessageSender>,
 }
 
 impl EvaluationServices {
-    pub fn new(promotions_repo: PromotionRepository, coupon_repo: CouponsRepository, coupon_uses_repo: CouponUsesRepository, message_sender: Arc<MessageSender>) -> Self {
-        Self { promotions_repo, message_sender, coupon_uses_repo, coupon_repo }
+    pub fn new(promotions_repo: PromotionRepository, coupon_repo: CouponsRepository, coupon_uses_repo: CouponUsesRepository, transaction_repo:  TransactionRepository,message_sender: Arc<MessageSender>) -> Self {
+        Self { promotions_repo, message_sender, coupon_uses_repo, coupon_repo, transaction_repo }
     }
 
     pub fn evaluate_promotion(&self, promotion_id: i32, specific_data: EvaluationSpecificDto, attributes: HashMap<String, f64>) -> ApiResult<EvaluationResultDto> {
@@ -71,9 +72,12 @@ impl EvaluationServices {
 
     fn validate_specific_data(&self, promotion: &Promotion, specific_data: &EvaluationSpecificDto) -> ApiResult<()> {
         match specific_data {
-            EvaluationSpecificDto::Discount { transaction_id: _ } => { // TODO: Add transaction id validation
+            EvaluationSpecificDto::Discount { transaction_id } => { // TODO: Add transaction id validation
                 if let PromotionType::Coupon = promotion.get_type() {
                     return Err(ApiError::from("Promotion type specific data doesnt match with promotion type"));
+                }
+                if self.transaction_repo.exists(*transaction_id)? {
+                    return Err(ApiError::from("Transaction id has already been used"));
                 }
                 Ok(())
             }
@@ -112,7 +116,11 @@ impl EvaluationServices {
 
     fn after_successful_evaluation_update(&self, promotion: Promotion, specific_data: &EvaluationSpecificDto) -> ApiResult<()> {
         match specific_data {
-            EvaluationSpecificDto::Discount { transaction_id: _ } => self.deactivate_promotion(promotion),
+            EvaluationSpecificDto::Discount { transaction_id } => {
+                // self.deactivate_promotion(promotion)
+                self.transaction_repo.create(&Transaction {id: *transaction_id})?;
+                Ok(())
+            },
             EvaluationSpecificDto::Coupon { user, coupon_code } => {
                 let coupon = self.get_coupon(promotion.id, &coupon_code)?;
                 let mut uses = self.coupon_uses_repo.find_or_create(coupon.promotion_id, coupon.id, *user)?;

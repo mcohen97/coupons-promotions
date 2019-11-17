@@ -10,7 +10,11 @@ mod coupons_repo;
 mod new_promotion;
 mod coupon;
 mod coupon_uses;
+mod transaction;
+mod transaction_repo;
 
+pub use transaction::*;
+pub use transaction_repo::*;
 pub use demographics::*;
 pub use promotion::*;
 pub use coupon::*;

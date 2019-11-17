@@ -38,6 +38,12 @@ table! {
     }
 }
 
+table! {
+    transactions (id) {
+        id -> Int4,
+    }
+}
+
 joinable!(coupons -> promotions (promotion_id));
 joinable!(promotions -> organizations (organization_id));
 
@@ -46,4 +52,5 @@ allow_tables_to_appear_in_same_query!(
     coupon_uses,
     organizations,
     promotions,
+    transactions,
 );

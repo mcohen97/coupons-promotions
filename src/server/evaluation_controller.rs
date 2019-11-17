@@ -16,9 +16,9 @@ impl EvaluationController {
         let start = std::time::SystemTime::now();
         let id = path.into_inner();
         let Services { evaluation, demographic, message_sender, .. } = fact.as_services()?;
-        let EvaluationIn { attributes, demography, specific_data } = data.into_inner();
+        let EvaluationIn { attributes, demography, specific_data , token} = data.into_inner();
 
-        let eval_result = evaluation.evaluate_promotion(id, specific_data, attributes)?;
+        let eval_result = evaluation.evaluate_promotion(id, specific_data, attributes, token)?;
         let response_time = start.elapsed().unwrap();
         let (demo_response, demo_data) = demographic.build_demographics_if_valid(demography);
         message_sender.send(Message::PromotionEvaluated(eval_result.to_message(id, response_time, demo_data)));
@@ -78,6 +78,7 @@ pub struct EvaluationIn {
     pub demography: Option<DemographyIn>,
     #[serde(flatten)]
     pub specific_data: EvaluationSpecificDto,
+    pub token: String
 }
 
 #[derive(Debug, Serialize, Deserialize)]

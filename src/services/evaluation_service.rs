@@ -1,6 +1,6 @@
 use crate::server::ApiResult;
 use std::collections::HashMap;
-use crate::models::{Promotion, PromotionRepository, PromotionType, PromotionExpression, PromotionReturn, CouponsRepository, CouponUsesRepository, Coupon, TransactionRepository, Transaction};
+use crate::models::{Promotion, PromotionRepository, PromotionType, PromotionExpression, PromotionReturn, CouponsRepository, CouponUsesRepository, Coupon, TransactionRepository, Transaction, AppKeyRepo};
 use crate::server::ApiError;
 use chrono::Utc;
 use crate::messages::MessageSender;
@@ -13,16 +13,18 @@ pub struct EvaluationServices {
     coupon_repo: CouponsRepository,
     coupon_uses_repo: CouponUsesRepository,
     transaction_repo: TransactionRepository,
+    appkey_repo: AppKeyRepo,
     message_sender: Arc<MessageSender>,
 }
 
 impl EvaluationServices {
-    pub fn new(promotions_repo: PromotionRepository, coupon_repo: CouponsRepository, coupon_uses_repo: CouponUsesRepository, transaction_repo: TransactionRepository, message_sender: Arc<MessageSender>) -> Self {
-        Self { promotions_repo, message_sender, coupon_uses_repo, coupon_repo, transaction_repo }
+    pub fn new(promotions_repo: PromotionRepository, coupon_repo: CouponsRepository, coupon_uses_repo: CouponUsesRepository, transaction_repo: TransactionRepository, appkey_repo: AppKeyRepo, message_sender: Arc<MessageSender>) -> Self {
+        Self { promotions_repo, message_sender, coupon_uses_repo, coupon_repo, appkey_repo, transaction_repo }
     }
 
-    pub fn evaluate_promotion(&self, promotion_id: i32, specific_data: EvaluationSpecificDto, attributes: HashMap<String, f64>) -> ApiResult<EvaluationResultDto> {
+    pub fn evaluate_promotion(&self, promotion_id: i32, specific_data: EvaluationSpecificDto, attributes: HashMap<String, f64>, token: String) -> ApiResult<EvaluationResultDto> {
         let promotion = self.promotions_repo.find(promotion_id)?;
+        self.appkey_repo.validate_token_permits_promotion(&promotion, token)?;
         self.validate_promotion_is_active(&promotion)?;
         self.validate_specific_data(&promotion, &specific_data)?;
         self.validate_not_expires(&promotion)?;

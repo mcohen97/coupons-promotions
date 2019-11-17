@@ -41,6 +41,7 @@ impl MessageListener {
         self.handler.channel.basic_consume(&self.queue, "evaluation consumer", BasicConsumeOptions::default(), FieldTable::default())
             .and_then(move |stream| {
                 stream.for_each(move |message| {
+                    debug!("Received message from {}", message.routing_key);
                     if let Err(e) = Self::consume_message(&message, repo.clone()) {
                         error!("{}", e);
                     }

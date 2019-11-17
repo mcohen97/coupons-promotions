@@ -21,6 +21,7 @@ extern crate evalexpr;
 extern crate env_logger;
 extern crate lapin;
 extern crate lapin_futures;
+extern crate nanoid;
 
 mod server;
 mod services;

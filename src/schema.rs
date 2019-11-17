@@ -1,4 +1,11 @@
 table! {
+    appkeys (promotion_id, token) {
+        promotion_id -> Int4,
+        token -> Varchar,
+    }
+}
+
+table! {
     coupons (id, promotion_id) {
         id -> Int4,
         coupon_code -> Varchar,
@@ -44,10 +51,12 @@ table! {
     }
 }
 
+joinable!(appkeys -> promotions (promotion_id));
 joinable!(coupons -> promotions (promotion_id));
 joinable!(promotions -> organizations (organization_id));
 
 allow_tables_to_appear_in_same_query!(
+    appkeys,
     coupons,
     coupon_uses,
     organizations,

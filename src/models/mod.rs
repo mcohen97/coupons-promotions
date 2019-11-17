@@ -12,8 +12,12 @@ mod coupon;
 mod coupon_uses;
 mod transaction;
 mod transaction_repo;
+mod appkeys_repo;
+mod appkey;
 
+pub use appkeys_repo::*;
 pub use transaction::*;
+pub use appkey::*;
 pub use transaction_repo::*;
 pub use demographics::*;
 pub use promotion::*;

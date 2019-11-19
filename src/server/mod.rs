@@ -104,7 +104,7 @@ impl Server {
     }
 
     fn get_pool_s() -> models::Pool {
-        let manager = ConnectionManager::<PgConnection>::new("postgres://coupons:coupons@localhost/eval-dev");
+        let manager = ConnectionManager::<PgConnection>::new(std::env::var("RABBIT_URL").expect("RABBIT_URL missing"));
         r2d2::Pool::builder()
             .build(manager)
             .expect("Failed to create pool.")

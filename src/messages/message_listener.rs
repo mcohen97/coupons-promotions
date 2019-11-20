@@ -11,7 +11,7 @@ use crate::models::OrganizationRepository;
 use std::error::Error as StdError;
 
 static EXCHANGE: &str = "amq.topic";
-static QUEUE: &str = "queue1";
+static QUEUE: &str = "evaluations- organization listener";
 
 #[derive(Clone)]
 pub struct MessageListener {

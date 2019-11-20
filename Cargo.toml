@@ -1,6 +1,6 @@
 [package]
 name = "evaluations"
-version = "0.2.0"
+version = "0.2 .0"
 authors = ["Eusebio Durán Montaña <eusebioDM98@gmail.com>"]
 edition = "2018"
 

@@ -10,6 +10,7 @@ pub struct Promotion {
     pub active: bool,
     pub return_type: String,
     pub return_value: f64,
+    #[serde(alias = "type")]
     pub type_: String,
     pub organization_id: i32,
     pub expiration: DateTime,

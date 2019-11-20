@@ -34,7 +34,7 @@ impl EvaluationResultDto {
                 organization_id: *organization_id,
                 promotion_id,
                 demographic_data,
-                evaluation_info: EvaluationInfo {
+                result: EvaluationInfo {
                     total_discounted: Some(*total_discount),
                     applicable: true,
                     response_time: response_time.as_millis(),
@@ -44,7 +44,7 @@ impl EvaluationResultDto {
                 organization_id: *organization_id,
                 promotion_id,
                 demographic_data,
-                evaluation_info: EvaluationInfo {
+                result: EvaluationInfo {
                     total_discounted: None,
                     applicable: false,
                     response_time: response_time.as_millis(),

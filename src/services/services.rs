@@ -1,7 +1,6 @@
 use crate::services::*;
 use crate::models::*;
 use crate::messages::MessageSender;
-use std::sync::Arc;
 use std::rc::Rc;
 
 pub struct Services {

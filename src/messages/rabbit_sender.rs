@@ -1,5 +1,4 @@
 use std::sync::mpsc::Receiver;
-use std::thread;
 use crate::messages::Message;
 use crate::messages::message_handler::MessageHandler;
 use crate::lapin::{
@@ -7,7 +6,6 @@ use crate::lapin::{
     options::*,
 };
 use futures::Future;
-use std::borrow::BorrowMut;
 
 static EXCHANGE: &str = "amq.topic";
 

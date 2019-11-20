@@ -4,7 +4,6 @@ use crate::models::{Promotion, PromotionRepository, PromotionType, PromotionExpr
 use crate::server::ApiError;
 use chrono::Utc;
 use crate::messages::MessageSender;
-use std::sync::Arc;
 use crate::services::EvaluationSpecificDto;
 
 #[derive(Clone)]
@@ -18,7 +17,13 @@ pub struct EvaluationServices {
 }
 
 impl EvaluationServices {
-    pub fn new(promotions_repo: PromotionRepository, coupon_repo: CouponsRepository, coupon_uses_repo: CouponUsesRepository, transaction_repo: TransactionRepository, appkey_repo: AppKeyRepo, message_sender: MessageSender) -> Self {
+    pub fn new(
+        promotions_repo: PromotionRepository,
+        coupon_repo: CouponsRepository,
+        coupon_uses_repo: CouponUsesRepository,
+        transaction_repo: TransactionRepository,
+        appkey_repo: AppKeyRepo,
+        message_sender: MessageSender) -> Self {
         Self { promotions_repo, message_sender, coupon_uses_repo, coupon_repo, appkey_repo, transaction_repo }
     }
 
@@ -74,7 +79,7 @@ impl EvaluationServices {
 
     fn validate_specific_data(&self, promotion: &Promotion, specific_data: &EvaluationSpecificDto) -> ApiResult<()> {
         match specific_data {
-            EvaluationSpecificDto::Discount { transaction_id } => { // TODO: Add transaction id validation
+            EvaluationSpecificDto::Discount { transaction_id } => {
                 if let PromotionType::Coupon = promotion.get_type() {
                     return Err(ApiError::from("Promotion type specific data doesnt match with promotion type"));
                 }
@@ -153,4 +158,3 @@ pub enum EvaluationResultDto {
     Applies { organization_id: i32, total_discount: f64, return_type: String },
     DoesntApply { organization_id: i32 },
 }
-

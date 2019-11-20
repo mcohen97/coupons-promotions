@@ -28,6 +28,19 @@ lapin = "0.28.2"
 log = "0.4"
 derive_more = "0.15.0"
 nanoid = "0.2.0"
+# Needed for sqlite.
+libsqlite3-sys = { version = "*", features = ["bundled"] }
+
+# Needed for Postgres.
+openssl-probe = "0.1.2"
+openssl = "*"
+# x86_64-unknown-linux-musl using the "vendored" feature below
+openssl-sys = "*"
 
 [dev_dependencies]
 speculate = "*"
+
+[features]
+# Force openssl-sys to staticly link in the openssl library. Necessary when
+# cross compiling to x86_64-unknown-linux-musl.
+vendored = ["openssl-sys/vendored"]

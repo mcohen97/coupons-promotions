@@ -1,6 +1,5 @@
 use crate::models::{Promotion};
 use crate::messages::MessageSender;
-use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(untagged)]

@@ -1,13 +1,5 @@
 use crate::messages::Message;
 use std::sync::mpsc::Sender;
-use crate::lapin::{
-    BasicProperties,
-    options::*,
-};
-use futures::Future;
-use crate::messages::message_handler::MessageHandler;
-use actix::fut::err;
-use crate::server::ApiResult;
 
 #[derive(Clone)]
 pub struct MessageSender {

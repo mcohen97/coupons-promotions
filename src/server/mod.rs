@@ -9,26 +9,28 @@ mod service_factory;
 
 pub use api_error::ApiError;
 pub use model_in::*;
+pub use service_factory::ServiceFactory;
+
 use actix_web::{error, middleware, web, App, HttpResponse, HttpServer};
 use evaluation_controller::EvaluationController;
 use health_controller::HealthController;
 use std::io;
 use diesel::r2d2::ConnectionManager;
 use diesel::PgConnection;
+use std::io::ErrorKind;
+use std::rc::Rc;
+use std::sync::mpsc;
+use std::sync::mpsc::{Sender, Receiver};
 use crate::models;
 use crate::server::promotions_controller::PromotionsController;
 use crate::messages::{MessageSender, MessageListener, RabbitSender, Message};
-use std::io::ErrorKind;
 use crate::server::app_key_controller::AppKeyController;
 use crate::models::OrganizationRepository;
-use std::rc::Rc;
+use crate::server::coupons_controller::CouponsController;
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
-pub use service_factory::ServiceFactory;
-use std::sync::{Arc, mpsc};
-use crate::server::coupons_controller::CouponsController;
-use std::sync::mpsc::{Sender, Receiver};
+
 
 pub struct Server {
     config: ServerConfig
@@ -45,40 +47,41 @@ impl Server {
 
         let pool = self.get_pool();
         let (message_sender, _message_listener) = self.start_message_handlers(pool.clone())?;
-        let arc_sender = Arc::new(message_sender.clone());
 
         HttpServer::new(move || {
             App::new()
-                //.data(message_sender.clone())
-                .data(ServiceFactory::new(Self::get_pool_s(), message_sender.clone()))
+                .data(ServiceFactory::new(pool.clone(), message_sender.clone()))
                 .wrap(middleware::Logger::new(&logger_format))
                 .data(Self::error_handling())
-                .service(web::resource("/health").route(web::get().to_async(HealthController::get)))
                 .service(
-                    web::scope("/promotions")
+                    web::scope("/v1")
+                        .service(web::resource("/health").route(web::get().to_async(HealthController::get)))
                         .service(
-                            web::resource("")
-                                .route(web::post().to(PromotionsController::post))
-                                .route(web::get().to(PromotionsController::get_all))
+                            web::scope("/promotions")
+                                .service(
+                                    web::resource("")
+                                        .route(web::post().to(PromotionsController::post))
+                                        .route(web::get().to(PromotionsController::get_all))
+                                )
+                                .service(
+                                    web::resource("{id}/evaluations")
+                                        .route(web::post().to(EvaluationController::post)),
+                                )
+                                .service(
+                                    web::resource("{id}")
+                                        .route(web::put().to(PromotionsController::put))
+                                        .route(web::get().to(PromotionsController::get))
+                                        .route(web::delete().to(PromotionsController::delete))
+                                )
+                                .service(
+                                    web::resource("{id}/coupons")
+                                        .route(web::post().to(CouponsController::post))
+                                        .route(web::get().to(CouponsController::get))
+                                )
                         )
                         .service(
-                            web::resource("{id}/evaluations")
-                                .route(web::post().to(EvaluationController::post)),
+                            web::resource("app_key").route(web::post().to(AppKeyController::post))
                         )
-                        .service(
-                            web::resource("{id}")
-                                .route(web::put().to(PromotionsController::put))
-                                .route(web::get().to(PromotionsController::get))
-                                .route(web::delete().to(PromotionsController::delete))
-                        )
-                        .service(
-                            web::resource("{id}/coupons")
-                                .route(web::post().to(CouponsController::post))
-                                .route(web::get().to(CouponsController::get))
-                        )
-                )
-                .service(
-                    web::resource("app_key").route(web::post().to(AppKeyController::post))
                 )
         })
             .bind(format!("{}:{}", &self.config.domain, &self.config.port))?
@@ -99,17 +102,10 @@ impl Server {
     fn get_pool(&self) -> models::Pool {
         let manager = ConnectionManager::<PgConnection>::new(self.generate_database_url());
         r2d2::Pool::builder()
+            .max_size(std::env::var("MAX_CONNECTIONS").expect("MAX_CONNECTIONS missing").parse().expect("Error parsing max connections"))
             .build(manager)
             .expect("Failed to create pool.")
     }
-
-    fn get_pool_s() -> models::Pool {
-        let manager = ConnectionManager::<PgConnection>::new(std::env::var("DATABASE_URL").expect("DATABASE_URL missing"));
-        r2d2::Pool::builder()
-            .build(manager)
-            .expect("Failed to create pool.")
-    }
-
 
     fn start_message_handlers(&self, pool: models::Pool) -> io::Result<(MessageSender, MessageListener)> {
         let (tx, rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
@@ -127,17 +123,13 @@ impl Server {
     }
 
     fn generate_database_url(&self) -> String {
-        format!("postgres://{}:{}@{}/{}", &self.config.db_user, &self.config.db_password, &self.config.db_host, &self.config.db_name)
+        std::env::var("DATABASE_URL").expect("DATABASE_URL missing")
     }
 }
 
 pub struct ServerConfig {
     pub domain: String,
     pub port: u16,
-    pub db_host: String,
-    pub db_name: String,
-    pub db_user: String,
-    pub db_password: String,
     pub rabbit_url: String,
     pub logger_format: String,
 }

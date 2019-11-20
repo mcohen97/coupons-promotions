@@ -1,6 +1,5 @@
 use lapin_futures::{Client, ConnectionProperties, Channel};
 use futures::Future;
-use crate::server::ApiResult;
 
 static EXCHANGE: &str = "amq.topic";
 

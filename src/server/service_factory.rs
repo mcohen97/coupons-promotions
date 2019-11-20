@@ -2,7 +2,6 @@ use crate::server::ApiResult;
 use crate::models;
 use crate::services::Services;
 use crate::messages::MessageSender;
-use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct ServiceFactory {

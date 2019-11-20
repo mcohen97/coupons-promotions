@@ -22,6 +22,9 @@ extern crate env_logger;
 extern crate lapin;
 extern crate lapin_futures;
 extern crate nanoid;
+extern crate openssl_probe;
+extern crate openssl;
+
 
 mod server;
 mod services;
@@ -31,20 +34,17 @@ mod messages;
 
 
 fn main() -> io::Result<()> {
+    openssl_probe::init_ssl_cert_env_vars();
     dotenv::dotenv().ok();
     env_logger::init();
     std::env::set_var("RUST_LOG", "info, error, debug");
     let domain = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".into());
     let port = std::env::var("PORT").unwrap_or_else(|_| "8080".into()).parse().expect("Invalid port");
-    let db_host = std::env::var("DB_HOST").expect("DB_HOST missing");
-    let db_user = std::env::var("DB_USER").expect("DB_USER missing");
-    let db_password = std::env::var("DB_PASSWORD").expect("DB_PASSWORD missing");
-    let db_name = std::env::var("DB_NAME").expect("DB_NAME missing");
     let rabbit_url = std::env::var("RABBIT_URL").expect("RABBIT_URL missing");
     let logger_format = std::env::var("LOGGER_FORMAT").expect("LOGGER_FORMAT missing");
 
     info!("Server is staring at {}:{}", &domain, &port);
-    let config = ServerConfig { domain, port, db_host, db_name, db_user, db_password, rabbit_url, logger_format };
+    let config = ServerConfig { domain, port, rabbit_url, logger_format };
     let server = Server::new(config);
     server.start()?;
 

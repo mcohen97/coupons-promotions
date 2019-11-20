@@ -1,7 +1,6 @@
 use crate::models::{PromotionRepository, OrganizationRepository, NewPromotion, Promotion};
 use crate::server::{ApiResult, ApiError, PromotionIn};
 use crate::messages::{MessageSender, Message};
-use std::sync::Arc;
 
 pub struct PromotionService {
     promotions_repo: PromotionRepository,

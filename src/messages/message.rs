@@ -29,7 +29,7 @@ impl Message {
 pub struct EvaluationResult {
     pub promotion_id: i32,
     pub organization_id: i32,
-    pub evaluation_info: EvaluationInfo,
+    pub result: EvaluationInfo,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub demographic_data: Option<DemographyData>,
 }

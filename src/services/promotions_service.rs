@@ -26,7 +26,7 @@ impl PromotionService {
     }
 
     pub fn create(&self, promotion: PromotionIn) -> ApiResult<Promotion> {
-        self.validate_organization_exists(promotion.organization_id)?;
+        self.validate_organization_exists(&promotion.organization_id)?;
         let new_promotion = Self::build_new_promotion(promotion);
 
         let created = self.promotions_repo.create(&new_promotion)?;
@@ -51,7 +51,7 @@ impl PromotionService {
 
     pub fn update(&self, id: i32, data: PromotionIn) -> ApiResult<Promotion> {
         let mut promotion = self.promotions_repo.find(id)?;
-        self.validate_organization_exists(promotion.organization_id)?;
+        self.validate_organization_exists(&promotion.organization_id)?;
 
         let PromotionIn { name, code, return_type, return_value, promotion_type, organization_id, expiration } = data;
         promotion = Promotion { name, code: code.to_lowercase(), return_type: return_type.to_string(), return_value, type_: promotion_type.to_string(), organization_id, expiration, ..promotion };
@@ -68,7 +68,7 @@ impl PromotionService {
         Ok(())
     }
 
-    fn validate_organization_exists(&self, organization: i32) -> ApiResult<()> {
+    fn validate_organization_exists(&self, organization: &str) -> ApiResult<()> {
         let exists = self.organization_repo.exists(organization)?;
 
         if !exists {

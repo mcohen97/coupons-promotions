@@ -26,7 +26,7 @@ table! {
 
 table! {
     organizations (id) {
-        id -> Int4,
+        id -> Varchar,
     }
 }
 
@@ -40,7 +40,7 @@ table! {
         return_value -> Float8,
         #[sql_name = "type"]
         type_ -> Varchar,
-        organization_id -> Int4,
+        organization_id -> Varchar,
         expiration -> Timestamptz,
     }
 }

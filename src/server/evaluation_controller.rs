@@ -31,7 +31,7 @@ impl EvaluationResultDto {
     pub fn to_message(&self, promotion_id: i32, response_time: Duration, demographic_data: Option<DemographyData>) -> messages::EvaluationResult {
         match self {
             EvaluationResultDto::Applies { organization_id, total_discount, .. } => messages::EvaluationResult {
-                organization_id: *organization_id,
+                organization_id: organization_id.to_string(),
                 promotion_id,
                 demographic_data,
                 result: EvaluationInfo {
@@ -41,7 +41,7 @@ impl EvaluationResultDto {
                 },
             },
             EvaluationResultDto::DoesntApply { organization_id } => messages::EvaluationResult {
-                organization_id: *organization_id,
+                organization_id: organization_id.to_string(),
                 promotion_id,
                 demographic_data,
                 result: EvaluationInfo {

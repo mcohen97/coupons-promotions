@@ -27,7 +27,7 @@ pub struct PromotionIn {
     pub return_type: ReturnTypesIn,
     pub return_value: f64,
     pub promotion_type: PromotionType,
-    pub organization_id: i32,
+    pub organization_id: String,
     pub expiration: DateTime,
 }
 

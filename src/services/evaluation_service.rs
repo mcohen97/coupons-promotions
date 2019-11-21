@@ -39,7 +39,7 @@ impl EvaluationServices {
         let expr = PromotionExpression::parse(&promotion.code)?;
         let eval_result = expr.evaluate(attributes)?;
 
-        let organization_id = promotion.organization_id;
+        let organization_id = (&promotion.organization_id).to_string();
         let res = if eval_result {
             self.after_successful_evaluation_update(promotion.clone(), &specific_data)?;
             EvaluationResultDto::Applies {
@@ -155,6 +155,6 @@ pub enum RequiredAttribute {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 pub enum EvaluationResultDto {
-    Applies { organization_id: i32, total_discount: f64, return_type: String },
-    DoesntApply { organization_id: i32 },
+    Applies { organization_id: String, total_discount: f64, return_type: String },
+    DoesntApply { organization_id: String },
 }

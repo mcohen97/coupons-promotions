@@ -1,4 +1,4 @@
-use crate::messages::Id;
+use crate::messages::{UUID};
 use crate::lapin::{
     options::*,
 };
@@ -52,7 +52,7 @@ impl MessageListener {
 
     fn consume_message(message: &Delivery, repo: OrganizationRepository) -> Result<(), String> {
         let payload = std::str::from_utf8(&message.data).map_err(|e| e.description().to_string())?;
-        let data: Id = serde_json::from_str(payload).map_err(|e| e.description().to_string())?;
+        let data: UUID = serde_json::from_str(payload).map_err(|e| e.description().to_string())?;
 
         match message.routing_key.as_str() {
             "organization.created" => {

@@ -16,7 +16,7 @@ impl OrganizationRepository {
     }
 
 
-    pub fn create(&self, id: i32) -> ApiResult<(bool)> {
+    pub fn create(&self, id: String) -> ApiResult<(bool)> {
         let _res: Organization = diesel::insert_into(organizations)
             .values(&Organization { id })
             .get_result(&*self.conn)?;
@@ -24,7 +24,7 @@ impl OrganizationRepository {
         Ok(true)
     }
 
-    pub fn delete(&self, id: i32) -> ApiResult<(bool)> {
+    pub fn delete(&self, id: String) -> ApiResult<(bool)> {
         let find = organizations.find(id);
         let delete = diesel::delete(find).execute(&*self.conn);
 
@@ -35,7 +35,7 @@ impl OrganizationRepository {
         }
     }
 
-    pub fn exists(&self, id: i32) -> ApiResult<bool> {
+    pub fn exists(&self, id: &str) -> ApiResult<bool> {
         let query = organizations.find(id).first::<Organization>(&*self.conn);
 
         match query {

@@ -1,4 +1,4 @@
 create table organizations
 (
-    id integer primary key
+    id varchar primary key
 );

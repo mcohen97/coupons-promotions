@@ -10,7 +10,7 @@ pub struct NewPromotion {
     pub return_type: String,
     pub return_value: f64,
     pub type_: String,
-    pub organization_id: i32,
+    pub organization_id: String,
     pub expiration: DateTime,
 }
 
@@ -21,7 +21,7 @@ impl NewPromotion {
         active: bool,
         p_return: PromotionReturn,
         p_type: PromotionType,
-        organization_id: i32,
+        organization_id: String,
         expiration: DateTime,
     ) -> Self {
         let (return_type, return_value) = match p_return {

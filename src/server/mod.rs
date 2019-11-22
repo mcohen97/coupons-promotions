@@ -6,11 +6,11 @@ mod coupons_controller;
 mod app_key_controller;
 mod model_in;
 mod service_factory;
+mod authenticater;
 
 pub use api_error::ApiError;
 pub use model_in::*;
 pub use service_factory::ServiceFactory;
-
 use actix_web::{error, middleware, web, App, HttpResponse, HttpServer};
 use evaluation_controller::EvaluationController;
 use health_controller::HealthController;
@@ -30,7 +30,11 @@ use crate::server::coupons_controller::CouponsController;
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
-
+const ADMIN_PERM: &str = "ADMIN";
+const HEADER: &str = "authentication";
+lazy_static! {
+    static ref SECRET: String = std::env::var("SECRET").expect("Missing SECRET");
+}
 
 pub struct Server {
     config: ServerConfig

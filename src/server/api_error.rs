@@ -25,13 +25,16 @@ impl ErrorJson {
 pub enum ApiError {
     BadRequest(Message),
     InternalError(Message),
+    Unauthorized
 }
 
 impl Into<HttpResponse> for ApiError {
     fn into(self) -> HttpResponse {
         match self {
             ApiError::BadRequest(msg) => HttpResponse::BadRequest().json(ErrorJson::from_message(msg)),
-            ApiError::InternalError(msg) => HttpResponse::InternalServerError().json(ErrorJson::from_message(msg))
+            ApiError::InternalError(msg) => HttpResponse::InternalServerError().json(ErrorJson::from_message(msg)),
+            ApiError::Unauthorized => HttpResponse::Unauthorized().json(ErrorJson::from_message("Unauthorized")),
+
         }
     }
 }
@@ -40,7 +43,8 @@ impl ResponseError for ApiError {
     fn error_response(&self) -> HttpResponse {
         match self {
             ApiError::BadRequest(msg) => HttpResponse::BadRequest().content_type("application/json").json(ErrorJson::from_message(msg.to_string())),
-            ApiError::InternalError(msg) => HttpResponse::InternalServerError().json(ErrorJson::from_message(msg.to_string()))
+            ApiError::InternalError(msg) => HttpResponse::InternalServerError().json(ErrorJson::from_message(msg.to_string())),
+            ApiError::Unauthorized => HttpResponse::Unauthorized().json(ErrorJson::from_message("Unauthorized")),
         }
     }
 }
@@ -49,7 +53,8 @@ impl Display for ApiError {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
         match self {
             ApiError::BadRequest(msg) => f.write_str(&serde_json::to_string_pretty(&ErrorJson::from_message(msg.to_string())).unwrap()),
-            ApiError::InternalError(msg) => f.write_str(&serde_json::to_string_pretty(&ErrorJson::from_message(msg.to_string())).unwrap())
+            ApiError::InternalError(msg) => f.write_str(&serde_json::to_string_pretty(&ErrorJson::from_message(msg.to_string())).unwrap()),
+            ApiError::Unauthorized => f.write_str(&serde_json::to_string_pretty(&ErrorJson::from_message("Unauthorized")).unwrap())
         }
     }
 }
@@ -109,7 +114,8 @@ impl ApiError {
     pub fn get_message(&self) -> Cow<'static, str> {
         match self {
             ApiError::InternalError(m) => m.clone(),
-            ApiError::BadRequest(m) => m.clone()
+            ApiError::BadRequest(m) => m.clone(),
+            ApiError::Unauthorized => "Unauthorized".into()
         }
     }
 }

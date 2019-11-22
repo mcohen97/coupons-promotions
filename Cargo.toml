@@ -28,6 +28,8 @@ lapin = "0.28.2"
 log = "0.4"
 derive_more = "0.15.0"
 nanoid = "0.2.0"
+jsonwebtoken = "6.0.1"
+lazy_static = "1.4.0"
 # Needed for sqlite.
 libsqlite3-sys = { version = "*", features = ["bundled"] }
 

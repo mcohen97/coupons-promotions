@@ -3,11 +3,17 @@ use actix_web::{HttpResponse, web};
 use actix_web::web::{Data, Json};
 use crate::services::GenerateCouponsDto;
 use crate::models::DateTime;
+use crate::server::authenticater::Authorization;
+
+lazy_static! {
+    static ref GET_PERMS: Vec<&'static str> = vec!["ADMIN, GET_PROMOTIONS"];
+    static ref POST_PERMS: Vec<&'static str> = vec!["ADMIN"];
+}
 
 pub struct CouponsController;
-
 impl CouponsController {
-    pub fn post(id: web::Path<i32>, data: Json<GenerateCouponsIn>, factory: Data<ServiceFactory>) -> ApiResult<HttpResponse> {
+    pub fn post(id: web::Path<i32>, data: Json<GenerateCouponsIn>, factory: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
+        Authorization::validate(&auth, &POST_PERMS)?;
         let service = factory.as_services()?.coupons;
         let id = id.into_inner();
         let res = service.generate_coupons(data.into_inner().into_dto(id))?;
@@ -15,7 +21,8 @@ impl CouponsController {
         Ok(HttpResponse::Ok().json(res))
     }
 
-    pub fn get(id: web::Path<i32>, factory: Data<ServiceFactory>) -> ApiResult<HttpResponse> {
+    pub fn get(id: web::Path<i32>, factory: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
+        Authorization::validate(&auth, &GET_PERMS)?;
         let service = factory.as_services()?.coupons;
         let id = id.into_inner();
         let res = service.get_coupons(id)?;

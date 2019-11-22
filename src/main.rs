@@ -24,7 +24,9 @@ extern crate lapin_futures;
 extern crate nanoid;
 extern crate openssl_probe;
 extern crate openssl;
-
+extern crate jsonwebtoken;
+#[macro_use]
+extern crate lazy_static;
 
 mod server;
 mod services;
@@ -37,7 +39,8 @@ fn main() -> io::Result<()> {
     openssl_probe::init_ssl_cert_env_vars();
     dotenv::dotenv().ok();
     env_logger::init();
-    std::env::set_var("RUST_LOG", "info, error, debug");
+    // std::env::set_var("RUST_LOG", "info,error,debug");
+    debug!("DEBUG FAMA LAMA");
     let domain = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".into());
     let port = std::env::var("PORT").unwrap_or_else(|_| "8080".into()).parse().expect("Invalid port");
     let rabbit_url = std::env::var("RABBIT_URL").expect("RABBIT_URL missing");

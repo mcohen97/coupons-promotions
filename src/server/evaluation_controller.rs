@@ -7,12 +7,16 @@ use crate::models::PromotionReturn;
 use std::time::Duration;
 use crate::messages::{EvaluationInfo, DemographyData, Message};
 use crate::messages;
+use crate::server::authenticater::Authorization;
 
+lazy_static! {
+    static ref POST_PERMS: Vec<&'static str> = vec!["ADMIN"];
+}
 
 pub struct EvaluationController;
-
 impl EvaluationController {
-    pub fn post(path: web::Path<i32>, data: Json<EvaluationIn>, fact: Data<ServiceFactory>) -> ApiResult<HttpResponse> {
+    pub fn post(path: web::Path<i32>, data: Json<EvaluationIn>, fact: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
+        Authorization::validate(&auth, &POST_PERMS)?;
         let start = std::time::SystemTime::now();
         let id = path.into_inner();
         let Services { evaluation, demographic, message_sender, .. } = fact.as_services()?;

@@ -55,7 +55,6 @@ impl ReturnTypesIn {
         }
     }
 }
-
 #[derive(Serialize, Deserialize)]
 pub struct Pagination {
     pub offset: u64,

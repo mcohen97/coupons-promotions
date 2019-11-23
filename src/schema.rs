@@ -2,6 +2,7 @@ table! {
     appkeys (promotion_id, token) {
         promotion_id -> Int4,
         token -> Varchar,
+        organization_id -> Varchar,
     }
 }
 
@@ -51,6 +52,7 @@ table! {
     }
 }
 
+joinable!(appkeys -> organizations (organization_id));
 joinable!(appkeys -> promotions (promotion_id));
 joinable!(coupons -> promotions (promotion_id));
 joinable!(promotions -> organizations (organization_id));

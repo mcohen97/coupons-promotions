@@ -1,5 +1,6 @@
 use crate::schema::appkeys::dsl::appkeys;
 use crate::schema::promotions::dsl::promotions;
+use crate::schema::appkeys::columns::*;
 use diesel::prelude::*;
 use std::rc::Rc;
 use crate::models::{Promotion, AppKey};
@@ -16,27 +17,27 @@ impl AppKeyRepo {
     }
 
     pub fn create(&self, promos: &[i32], org_id: String) -> ApiResult<String> {
-        let token = nanoid::simple();
-        self.validate_promotions(promos, org_id)?;
+        let token_ = nanoid::simple();
+        self.validate_promotions(promos, &org_id)?;
         self.conn.transaction(|| {
             promos.into_iter()
-                .map(|&p| AppKey { promotion_id: p, token: token.clone() })
+                .map(|&p| AppKey { promotion_id: p, token: token_.clone(), organization_id: org_id.clone() })
                 .map(|p| self.insert_keys(p))
                 .collect::<ApiResult<()>>()
         })?;
 
-        Ok(token)
+        Ok(token_)
     }
 
-    fn validate_promotions(&self, promos: &[i32], org_id: String) -> ApiResult<()> {
+    fn validate_promotions(&self, promos: &[i32], org_id: &str) -> ApiResult<()> {
         let r_promos: Result<Vec<Promotion>, diesel::result::Error> = promos.into_iter()
             .map(|&p| promotions.find(p).first::<Promotion>(&*self.conn))
             .collect();
         if let Err(diesel::result::Error::DatabaseError(_, _)) = r_promos {
-            return Err(ApiError::from("One of the promotion doesnt exists"))
+            return Err(ApiError::from("One of the promotion doesnt exists"));
         }
         if let Err(diesel::NotFound) = r_promos {
-            return Err(ApiError::from("One of the promotion doesnt exists"))
+            return Err(ApiError::from("One of the promotion doesnt exists"));
         }
         let promos = r_promos?;
         promos.first().ok_or(ApiError::from("Needs at least 1 promotion"))?;
@@ -62,5 +63,23 @@ impl AppKeyRepo {
             res?;
             Ok(())
         }
+    }
+
+    pub fn get_all(&self, org_id: &str, offset: i64, limit: i64) -> ApiResult<Vec<AppKey>> {
+        Ok(appkeys
+            .filter(organization_id.eq(org_id))
+            .offset(offset)
+            .limit(limit)
+            .load(&*self.conn)?
+        )
+    }
+
+    pub fn get_promotions_by_token(&self,token_: &str ,org_id: &str) -> ApiResult<Vec<i32>> {
+        Ok(appkeys
+            .select(promotion_id)
+            .filter(organization_id.eq(org_id))
+            .filter(token.eq(token_))
+            .load(&*self.conn)?
+        )
     }
 }

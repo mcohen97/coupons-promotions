@@ -68,7 +68,7 @@ impl Server {
                                         .route(web::get().to(PromotionsController::get_all))
                                 )
                                 .service(
-                                    web::resource("{id}/evaluations")
+                                    web::resource("{id}/evaluate")
                                         .route(web::post().to(EvaluationController::post)),
                                 )
                                 .service(
@@ -84,7 +84,16 @@ impl Server {
                                 )
                         )
                         .service(
-                            web::resource("app_key").route(web::post().to(AppKeyController::post))
+                            web::scope("app_keys")
+                                .service(
+                                    web::resource("")
+                                        .route(web::post().to(AppKeyController::post))
+                                        .route(web::get().to(AppKeyController::get_all))
+                                )
+                                .service(
+                                    web::resource("{token}")
+                                        .route(web::get().to(AppKeyController::get))
+                                )
                         )
                 )
         })

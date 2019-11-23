@@ -5,4 +5,5 @@ use crate::schema::appkeys;
 pub struct AppKey {
     pub promotion_id: i32,
     pub token: String,
+    pub organization_id: String,
 }

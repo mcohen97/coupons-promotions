@@ -12,8 +12,8 @@ impl CouponServices {
         Self { promotions_repo, coupons_repo }
     }
 
-    pub fn generate_coupons(&self, data: GenerateCouponsDto) -> ApiResult<Vec<CouponsDto>> {
-        let promotion = self.promotions_repo.find(data.promotion_id)?;
+    pub fn generate_coupons(&self, data: GenerateCouponsDto, org: String) -> ApiResult<Vec<CouponsDto>> {
+        let promotion = self.promotions_repo.find(data.promotion_id, &org)?;
         self.validate_promotion_is_coupons(&promotion)?;
 
         let coupon_codes: Vec<NewCoupon> = (0..data.quantity).into_iter()
@@ -37,7 +37,8 @@ impl CouponServices {
         }
     }
 
-    pub fn get_coupons(&self, promotion_id: i32) -> ApiResult<Vec<CouponsDto>> {
+    pub fn get_coupons(&self, promotion_id: i32, org: String) -> ApiResult<Vec<CouponsDto>> {
+        self.promotions_repo.find(promotion_id, &org)?;
         Ok(self.coupons_repo
             .get_by_promotion(promotion_id)?
             .into_iter()

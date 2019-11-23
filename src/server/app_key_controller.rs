@@ -10,10 +10,10 @@ lazy_static! {
 pub struct AppKeyController;
 impl AppKeyController {
     pub fn post(data: Json<NewAppkeyIn>, fact: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
-        Authorization::validate(&auth, &POST_PERMS)?;
+        let org = Authorization::validate(&auth, &POST_PERMS)?;
         let service = fact.as_services()?.appkey_repo;
         let promotions = &data.promotions;
-        let token = service.create(promotions)?;
+        let token = service.create(promotions, org)?;
 
         Ok(HttpResponse::Ok().json(AppKeyOut { token }))
     }

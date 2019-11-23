@@ -2,6 +2,7 @@ use crate::models::{Connection, Promotion, NewPromotion};
 use crate::server::{ApiResult, ApiError};
 use diesel::prelude::*;
 use crate::schema::promotions::dsl::promotions;
+use crate::schema::promotions::columns::organization_id;
 use std::rc::Rc;
 
 #[derive(Clone)]
@@ -14,12 +15,22 @@ impl PromotionRepository {
         PromotionRepository { conn }
     }
 
-    pub fn get(&self) -> ApiResult<Vec<Promotion>> {
-        Ok(promotions.load(&*self.conn)?)
+    pub fn get(&self, offset: i64, limit: i64, org_id: &str) -> ApiResult<Vec<Promotion>> {
+
+        Ok(promotions
+                .filter(organization_id.eq(org_id))
+                .offset(offset)
+                .limit(limit)
+                .load(&*self.conn)?
+        )
     }
 
-    pub fn find(&self, id: i32) -> ApiResult<Promotion> {
-        Ok(promotions.find(id).first::<Promotion>(&*self.conn)?)
+    pub fn find(&self, id: i32, org_id: &str) -> ApiResult<Promotion> {
+        Ok(promotions
+            .filter(organization_id.eq(org_id))
+            .find(id)
+            .first::<Promotion>(&*self.conn)?
+        )
     }
 
     pub fn create(&self, promo: &NewPromotion) -> ApiResult<Promotion> {
@@ -35,8 +46,8 @@ impl PromotionRepository {
         Ok(())
     }
 
-    pub fn delete(&self, id: i32) -> ApiResult<bool> {
-        let find = promotions.find(id);
+    pub fn delete(&self, id: i32, org_id: &str) -> ApiResult<bool> {
+        let find = promotions.filter(organization_id.eq(org_id)).find(id);
         let delete = diesel::delete(find).execute(&*self.conn);
 
         match delete {
@@ -106,7 +117,7 @@ mod tests {
         assert_eq!(true, fetched_same_as_created);
 
         let all_deleted = fetched.iter().all(|p| repo.delete(p.id).unwrap());
-        assert_eq!(true,all_deleted);
+        assert_eq!(true, all_deleted);
 
         let promos_left = repo.get().unwrap();
         assert_eq!(0, promos_left.len());
@@ -120,7 +131,7 @@ mod tests {
             PromotionReturn::Percentage(10.0),
             PromotionType::Discount,
             1,
-            Utc::now()
+            Utc::now(),
         )
     }
 }

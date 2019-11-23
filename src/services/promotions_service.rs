@@ -13,21 +13,23 @@ impl PromotionService {
         PromotionService { promotions_repo, organization_repo, message_sender }
     }
 
-    pub fn get(&self, id: i32) -> ApiResult<Promotion> {
-        let promo = self.promotions_repo.find(id)?;
+    pub fn get(&self, id: i32, org: String) -> ApiResult<Promotion> {
+        let promo = self.promotions_repo.find(id, &org)?;
 
         Ok(promo)
     }
 
-    pub fn get_all(&self) -> ApiResult<Vec<Promotion>> {
-        let promos = self.promotions_repo.get()?;
+    pub fn get_all(&self, offset: u64, limit: u64, org: String) -> ApiResult<Vec<Promotion>> {
+        let offset = offset as i64;
+        let limit = limit as i64;
+        let promos = self.promotions_repo.get(offset, limit, &org)?;
 
         Ok(promos)
     }
 
-    pub fn create(&self, promotion: PromotionIn) -> ApiResult<Promotion> {
-        self.validate_organization_exists(&promotion.organization_id)?;
-        let new_promotion = Self::build_new_promotion(promotion);
+    pub fn create(&self, promotion: PromotionIn, org: String) -> ApiResult<Promotion> {
+        self.validate_organization_exists(&org)?;
+        let new_promotion = Self::build_new_promotion(promotion, org);
 
         let created = self.promotions_repo.create(&new_promotion)?;
         self.message_sender.send(Message::PromotionCreated(created.clone()));
@@ -35,8 +37,8 @@ impl PromotionService {
         Ok(created)
     }
 
-    fn build_new_promotion(data: PromotionIn) -> NewPromotion {
-        let PromotionIn { name, code, return_type, return_value, promotion_type, organization_id, expiration } = data;
+    fn build_new_promotion(data: PromotionIn, org: String) -> NewPromotion {
+        let PromotionIn { name, code, return_type, return_value, promotion_type, expiration } = data;
         let ret = return_type.get_return(return_value);
         NewPromotion::new(
             name,
@@ -44,25 +46,25 @@ impl PromotionService {
             true,
             ret,
             promotion_type,
-            organization_id,
+            org,
             expiration,
         )
     }
 
-    pub fn update(&self, id: i32, data: PromotionIn) -> ApiResult<Promotion> {
-        let mut promotion = self.promotions_repo.find(id)?;
+    pub fn update(&self, id: i32, data: PromotionIn, org: String) -> ApiResult<Promotion> {
+        let mut promotion = self.promotions_repo.find(id, &org)?;
         self.validate_organization_exists(&promotion.organization_id)?;
 
-        let PromotionIn { name, code, return_type, return_value, promotion_type, organization_id, expiration } = data;
-        promotion = Promotion { name, code: code.to_lowercase(), return_type: return_type.to_string(), return_value, type_: promotion_type.to_string(), organization_id, expiration, ..promotion };
+        let PromotionIn { name, code, return_type, return_value, promotion_type, expiration } = data;
+        promotion = Promotion { name, code: code.to_lowercase(), return_type: return_type.to_string(), return_value, type_: promotion_type.to_string(), organization_id: org, expiration, ..promotion };
         self.promotions_repo.update(&promotion)?;
 
         self.message_sender.send(Message::PromotionUpdate(promotion.clone()));
         Ok(promotion)
     }
 
-    pub fn delete(&self, id: i32) -> ApiResult<()> {
-        self.promotions_repo.delete(id)?;
+    pub fn delete(&self, id: i32, org: String) -> ApiResult<()> {
+        self.promotions_repo.delete(id, &org)?;
         self.message_sender.send(Message::PromotionDeleted(id.into()));
 
         Ok(())

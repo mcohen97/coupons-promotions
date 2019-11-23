@@ -15,9 +15,9 @@ impl AppKeyRepo {
         AppKeyRepo { conn }
     }
 
-    pub fn create(&self, promos: &[i32]) -> ApiResult<String> {
+    pub fn create(&self, promos: &[i32], org_id: String) -> ApiResult<String> {
         let token = nanoid::simple();
-        self.validate_promotions(promos)?;
+        self.validate_promotions(promos, org_id)?;
         self.conn.transaction(|| {
             promos.into_iter()
                 .map(|&p| AppKey { promotion_id: p, token: token.clone() })
@@ -28,7 +28,7 @@ impl AppKeyRepo {
         Ok(token)
     }
 
-    fn validate_promotions(&self, promos: &[i32]) -> ApiResult<()> {
+    fn validate_promotions(&self, promos: &[i32], org_id: String) -> ApiResult<()> {
         let r_promos: Result<Vec<Promotion>, diesel::result::Error> = promos.into_iter()
             .map(|&p| promotions.find(p).first::<Promotion>(&*self.conn))
             .collect();
@@ -39,13 +39,13 @@ impl AppKeyRepo {
             return Err(ApiError::from("One of the promotion doesnt exists"))
         }
         let promos = r_promos?;
-        let first = promos.first().ok_or(ApiError::from("Needs at least 1 promotion"))?;
+        promos.first().ok_or(ApiError::from("Needs at least 1 promotion"))?;
 
-        let all_have_same_org = promos.iter().all(|p| p.organization_id == first.organization_id);
+        let all_have_same_org = promos.iter().all(|p| p.organization_id == org_id);
         if all_have_same_org {
             Ok(())
         } else {
-            Err(ApiError::from("All promotions need to be of the same organization"))
+            Err(ApiError::from(format!("All promotions need to be of the organization {}", org_id)))
         }
     }
 

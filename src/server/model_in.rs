@@ -3,6 +3,7 @@ use crate::services::{DemographyIn, RequiredAttribute};
 use std::borrow::Cow;
 use crate::messages::EvaluationInfo;
 use crate::models::{DateTime, PromotionReturn, PromotionType};
+use actix_web::web::Query;
 
 #[derive(Serialize, Deserialize)]
 pub struct EvaluationIn {
@@ -27,7 +28,6 @@ pub struct PromotionIn {
     pub return_type: ReturnTypesIn,
     pub return_value: f64,
     pub promotion_type: PromotionType,
-    pub organization_id: String,
     pub expiration: DateTime,
 }
 
@@ -52,6 +52,23 @@ impl ReturnTypesIn {
         match self {
             ReturnTypesIn::Percentage => "percentage".to_string(),
             ReturnTypesIn::Fixed => "fixed".to_string()
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Pagination {
+    pub offset: u64,
+    pub limit: u64
+}
+
+impl Pagination {
+    pub fn get_or_default(pag: Option<Query<Pagination>>) -> Pagination {
+        if let Some(val) = pag {
+            val.into_inner()
+        }
+        else {
+            Pagination {offset: 0, limit: 10 }
         }
     }
 }

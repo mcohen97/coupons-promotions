@@ -4,6 +4,8 @@ use actix_web::web::{Json, Data};
 
 use crate::server::model_in::PromotionIn;
 use crate::server::authenticater::Authorization;
+use actix_web::web::Query;
+use crate::server::model_in::Pagination;
 
 pub struct PromotionsController;
 
@@ -16,41 +18,42 @@ lazy_static! {
 
 impl PromotionsController {
     pub fn post(data: Json<PromotionIn>, services: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
-        Authorization::validate(&auth, &POST_PERMS)?;
+        let org = Authorization::validate(&auth, &POST_PERMS)?;
         let service = services.as_services()?.promotions;
-        let created = service.create(data.into_inner())?;
+        let created = service.create(data.into_inner(), org)?;
 
         Ok(HttpResponse::Created().json(created))
     }
 
     pub fn put(id: web::Path<i32>, data: Json<PromotionIn>, services: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
-        Authorization::validate(&auth, &PUT_PERMS)?;
+        let org = Authorization::validate(&auth, &PUT_PERMS)?;
         let service = services.as_services()?.promotions;
-        let updated = service.update(id.into_inner(), data.into_inner())?;
+        let updated = service.update(id.into_inner(), data.into_inner(), org)?;
 
         Ok(HttpResponse::Ok().json(updated))
     }
 
     pub fn delete(id: web::Path<i32>, services: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
-        Authorization::validate(&auth, &DELETE_PERMS)?;
+        let org = Authorization::validate(&auth, &DELETE_PERMS)?;
         let service = services.as_services()?.promotions;
-        service.delete(id.into_inner())?;
+        service.delete(id.into_inner(), org)?;
 
         Ok(HttpResponse::Ok().finish())
     }
 
     pub fn get(id: web::Path<i32>, services: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
-        Authorization::validate(&auth, &GET_PERMS)?;
+        let org = Authorization::validate(&auth, &GET_PERMS)?;
         let service = services.as_services()?.promotions;
-        let promotion = service.get(id.into_inner())?;
+        let promotion = service.get(id.into_inner(), org)?;
 
         Ok(HttpResponse::Ok().json(&promotion))
     }
 
-    pub fn get_all(services: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
-        Authorization::validate(&auth, &GET_PERMS)?;
+    pub fn get_all(pag: Option<Query<Pagination>>, services: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
+        let org = Authorization::validate(&auth, &GET_PERMS)?;
+        let pag = Pagination::get_or_default(pag);
         let service = services.as_services()?.promotions;
-        let promotion = service.get_all()?;
+        let promotion = service.get_all(pag.offset, pag.limit, org)?;
 
         Ok(HttpResponse::Ok().json(&promotion))
     }

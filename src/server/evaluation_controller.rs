@@ -16,13 +16,13 @@ lazy_static! {
 pub struct EvaluationController;
 impl EvaluationController {
     pub fn post(path: web::Path<i32>, data: Json<EvaluationIn>, fact: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
-        Authorization::validate(&auth, &POST_PERMS)?;
+        let org = Authorization::validate(&auth, &POST_PERMS)?;
         let start = std::time::SystemTime::now();
         let id = path.into_inner();
         let Services { evaluation, demographic, message_sender, .. } = fact.as_services()?;
         let EvaluationIn { attributes, demography, specific_data , token} = data.into_inner();
 
-        let eval_result = evaluation.evaluate_promotion(id, specific_data, attributes, token)?;
+        let eval_result = evaluation.evaluate_promotion(id, specific_data, attributes, token, org)?;
         let response_time = start.elapsed().unwrap();
         let (demo_response, demo_data) = demographic.build_demographics_if_valid(demography);
         message_sender.send(Message::PromotionEvaluated(eval_result.to_message(id, response_time, demo_data)));

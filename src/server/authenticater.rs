@@ -18,7 +18,8 @@ lazy_static! {
 }
 
 pub struct Authorization {
-    permissions: HashSet<String>
+    permissions: HashSet<String>,
+    pub organization_id: String
 }
 
 impl FromRequest for Authorization {
@@ -46,17 +47,18 @@ fn val(req: &HttpRequest) -> Result<Authorization, HttpResponse> {
             info!("Authentication failed: {}", e);
             HttpResponse::Unauthorized().finish()
         })?;
+    let organization_id = token.claims.organization_id.clone();
     let permissions = HashSet::from_iter(token.claims.permissions.into_iter());
 
-    Ok(Authorization { permissions })
+    Ok(Authorization { permissions, organization_id })
 }
 
 impl Authorization {
-    pub fn validate(auth: &Option<Authorization>, permissions: &Vec<&str>) -> ApiResult<()> {
+    pub fn validate(auth: &Option<Authorization>, permissions: &Vec<&str>) -> ApiResult<String> {
         match auth {
             Some(auth) => {
                 if permissions.into_iter().any(|&p| auth.permissions.contains(p)) {
-                    Ok(())
+                    Ok(auth.organization_id.clone())
                 }
                 else {
                     Err(ApiError::Unauthorized)
@@ -70,5 +72,6 @@ impl Authorization {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub permissions: Vec<String>
+    pub permissions: Vec<String>,
+    pub organization_id: String
 }

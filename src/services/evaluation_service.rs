@@ -27,8 +27,8 @@ impl EvaluationServices {
         Self { promotions_repo, message_sender, coupon_uses_repo, coupon_repo, appkey_repo, transaction_repo }
     }
 
-    pub fn evaluate_promotion(&self, promotion_id: i32, specific_data: EvaluationSpecificDto, attributes: HashMap<String, f64>, token: String) -> ApiResult<EvaluationResultDto> {
-        let promotion = self.promotions_repo.find(promotion_id)?;
+    pub fn evaluate_promotion(&self, promotion_id: i32, specific_data: EvaluationSpecificDto, attributes: HashMap<String, f64>, token: String, org: String) -> ApiResult<EvaluationResultDto> {
+        let promotion = self.promotions_repo.find(promotion_id, &org)?;
         self.appkey_repo.validate_token_permits_promotion(&promotion, token)?;
         self.validate_promotion_is_active(&promotion)?;
         self.validate_specific_data(&promotion, &specific_data)?;
@@ -73,8 +73,8 @@ impl EvaluationServices {
         }
     }
 
-    fn validate_organization_exists(&self, org_id: i32) -> ApiResult<()> {
-        self.promotions_repo.find(org_id).map(|_| ())
+    fn validate_organization_exists(&self, org_id: i32, org: String) -> ApiResult<()> {
+        self.promotions_repo.find(org_id, &org).map(|_| ())
     }
 
     fn validate_specific_data(&self, promotion: &Promotion, specific_data: &EvaluationSpecificDto) -> ApiResult<()> {

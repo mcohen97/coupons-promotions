@@ -4,6 +4,7 @@ use diesel::prelude::*;
 use crate::schema::promotions::dsl::promotions;
 use crate::schema::promotions::columns::{code, active, organization_id, name, type_, deleted};
 use std::rc::Rc;
+use diesel::result::DatabaseErrorInformation;
 
 #[derive(Clone)]
 pub struct PromotionRepository {
@@ -69,7 +70,8 @@ impl PromotionRepository {
 
         match res {
             Ok(val) => Ok(val),
-            Err(diesel::result::Error::DatabaseError(diesel::result::DatabaseErrorKind::UniqueViolation, _)) => Err(ApiError::from("Code was already taken")),
+            Err(diesel::result::Error::DatabaseError(diesel::result::DatabaseErrorKind::UniqueViolation, e)) =>
+                Err(ApiError::from(Self::friendly_error(e))),
             Err(e) => Err(ApiError::from(e))
         }
     }
@@ -82,7 +84,8 @@ impl PromotionRepository {
 
         match res {
             Ok(_) => Ok(()),
-            Err(diesel::result::Error::DatabaseError(diesel::result::DatabaseErrorKind::UniqueViolation, _)) => Err(ApiError::from("Code was already taken")),
+            Err(diesel::result::Error::DatabaseError(diesel::result::DatabaseErrorKind::UniqueViolation, e)) =>
+                Err(ApiError::from(Self::friendly_error(e))),
             Err(e) => Err(ApiError::from(e))
         }
     }
@@ -97,6 +100,19 @@ impl PromotionRepository {
             .execute(&*self.conn)?;
 
         Ok(true)
+    }
+
+    fn friendly_error(err: Box<dyn DatabaseErrorInformation>) -> String {
+        let msg = err.message();
+        if msg.contains("promotions_code") {
+            "Promotion code has been taken".into()
+        }
+        else if msg.contains("name") {
+            "Name has been taken".into()
+        }
+        else {
+            msg.into()
+        }
     }
 }
 

@@ -14,6 +14,7 @@ create table promotions
 	return_value double precision not null,
 	type varchar not null,
 	organization_id varchar not null references organizations(id),
-	UNIQUE (code, organization_id)
+	UNIQUE (code, organization_id),
+	UNIQUE(name)
 );
 

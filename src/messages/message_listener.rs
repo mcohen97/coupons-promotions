@@ -10,7 +10,9 @@ use crate::lapin::types::FieldTable;
 use crate::models::OrganizationRepository;
 use std::error::Error as StdError;
 
-static EXCHANGE: &str = "amq.topic";
+lazy_static! {
+    static ref EXCHANGE: String = std::env::var("EXCHANGE").expect("Missing exh");
+}
 static QUEUE: &str = "evaluations- organization listener";
 
 #[derive(Clone)]
@@ -24,7 +26,7 @@ impl MessageListener {
     pub fn new(url: &str, repo: OrganizationRepository) -> Result<Self, lapin::Error> {
         let handler = MessageHandler::new(url, "Message listener")?;
         let queue = handler.channel.queue_declare(QUEUE, QueueDeclareOptions::default(), FieldTable::default()).wait()?;
-        handler.channel.queue_bind(queue.name().as_str(), EXCHANGE, "organization.*", QueueBindOptions::default(), FieldTable::default()).wait()?;
+        handler.channel.queue_bind(queue.name().as_str(), &EXCHANGE, "organization.*", QueueBindOptions::default(), FieldTable::default()).wait()?;
         info!("Queue {} created", queue.name());
 
         Ok(MessageListener { handler, repo, queue })
@@ -61,7 +63,7 @@ impl MessageListener {
             "organization.deleted" => {
                 info!("Deleting organization with id {}", data.id);
                 repo.delete(data.id).map_err(|e| e.get_message().to_string()).map(|_| ()) }
-            _ => Err("Unknown message".to_string())
+            key => Err(format!("Unknown message from {}", key))
         }?;
 
         Ok(())

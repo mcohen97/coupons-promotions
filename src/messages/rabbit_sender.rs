@@ -7,7 +7,9 @@ use crate::lapin::{
 };
 use futures::Future;
 
-static EXCHANGE: &str = "amq.topic";
+lazy_static! {
+    static ref EXCHANGE: String = std::env::var("EXCHANGE").expect("Missing exh");
+}
 
 pub struct RabbitSender {
     channel: Receiver<Message>,
@@ -33,7 +35,7 @@ impl RabbitSender {
     }
 
     fn try_to_send(&mut self, key: &str, payload: Vec<u8>) -> Result<(), lapin::Error> {
-        let res = self.handler.channel.basic_publish(EXCHANGE, key, payload, BasicPublishOptions::default(), BasicProperties::default()).wait();
+        let res = self.handler.channel.basic_publish(&EXCHANGE, key, payload, BasicPublishOptions::default(), BasicProperties::default()).wait();
         match res {
             Ok(()) => {
                 info!("Message sent to {}", key);

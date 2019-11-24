@@ -64,7 +64,7 @@ impl EvaluationResultDto {
                 demography_response,
             },
             EvaluationResultDto::DoesntApply { .. } => EvaluationOut {
-                is_valid: true,
+                is_valid: false,
                 return_val: None,
                 return_type: None,
                 demography_response,
@@ -86,7 +86,9 @@ pub struct EvaluationIn {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EvaluationOut {
     pub is_valid: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub return_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub return_val: Option<f64>,
     pub demography_response: String,
 }

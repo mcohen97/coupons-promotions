@@ -11,10 +11,11 @@ pub struct Promotion {
     pub active: bool,
     pub return_type: String,
     pub return_value: f64,
-    #[serde(rename = "promotion_ype")]
+    #[serde(rename = "promotion_type")]
     pub type_: String,
     pub organization_id: String,
     pub expiration: DateTime,
+    #[serde(skip_deserializing)]
     pub deleted: bool,
 }
 

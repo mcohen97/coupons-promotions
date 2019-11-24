@@ -1,5 +1,5 @@
 use actix_web::{web, HttpResponse};
-use crate::server::{ApiResult, ServiceFactory};
+use crate::server::{ApiResult, ServiceFactory, PaginationIn};
 use actix_web::web::{Json, Data};
 
 use crate::server::model_in::PromotionIn;
@@ -49,7 +49,7 @@ impl PromotionsController {
         Ok(HttpResponse::Ok().json(&promotion))
     }
 
-    pub fn get_all(pag: Option<Query<Pagination>>, services: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
+    pub fn get_all(pag: Query<PaginationIn>, services: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
         let org = Authorization::validate(&auth, &GET_PERMS)?;
         let pag = Pagination::get_or_default(pag);
         let service = services.as_services()?.promotions;

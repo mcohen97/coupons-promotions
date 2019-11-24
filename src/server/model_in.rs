@@ -56,19 +56,25 @@ impl ReturnTypesIn {
         }
     }
 }
+
 #[derive(Serialize, Deserialize)]
-pub struct Pagination {
-    pub offset: u64,
-    pub limit: u64
+pub struct PaginationIn {
+    pub offset: Option<u64>,
+    pub limit: Option<u64>,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct Pagination {
+    pub offset: i64,
+    pub limit: i64,
+}
+
+
 impl Pagination {
-    pub fn get_or_default(pag: Option<Query<Pagination>>) -> Pagination {
-        if let Some(val) = pag {
-            val.into_inner()
-        }
-        else {
-            Pagination {offset: 0, limit: 10 }
-        }
+    pub fn get_or_default(pag: Query<PaginationIn>) -> Pagination {
+        let offset = pag.offset.unwrap_or(0) as i64;
+        let limit = pag.limit.unwrap_or(10) as i64;
+
+        Pagination { offset, limit }
     }
 }

@@ -19,9 +19,7 @@ impl PromotionService {
         Ok(promo)
     }
 
-    pub fn get_all(&self, offset: u64, limit: u64, org: String) -> ApiResult<Vec<Promotion>> {
-        let offset = offset as i64;
-        let limit = limit as i64;
+    pub fn get_all(&self, offset: i64, limit: i64, org: String) -> ApiResult<Vec<Promotion>> {
         let promos = self.promotions_repo.get(offset, limit, &org)?;
 
         Ok(promos)

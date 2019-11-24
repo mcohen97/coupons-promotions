@@ -1,4 +1,4 @@
-use crate::server::{ApiResult, ServiceFactory};
+use crate::server::{ApiResult, ServiceFactory, PaginationIn};
 use crate::models::AppKey;
 use actix_web::HttpResponse;
 use actix_web::web::{Json, Data, Path};
@@ -23,12 +23,12 @@ impl AppKeyController {
         Ok(HttpResponse::Ok().json(AppKeyOut { token }))
     }
 
-    pub fn get_all(fact: Data<ServiceFactory>, auth: Option<Authorization>, pag: Option<Query<Pagination>>) -> ApiResult<HttpResponse> {
+    pub fn get_all(fact: Data<ServiceFactory>, auth: Option<Authorization>, pag: Query<PaginationIn>) -> ApiResult<HttpResponse> {
         let org = Authorization::validate(&auth, &GET_PERMS)?;
         let service = fact.as_services()?.appkey_repo;
         let pag = Pagination::get_or_default(pag);
         let res: Vec<String> = service
-            .get_all(&org, pag.offset as i64, pag.limit as i64)?
+            .get_all(&org, pag.offset, pag.limit)?
             .into_iter()
             .map(|key| key.token)
             .collect();

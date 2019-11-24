@@ -27,6 +27,7 @@ use crate::messages::{MessageSender, MessageListener, RabbitSender, Message};
 use crate::server::app_key_controller::AppKeyController;
 use crate::models::OrganizationRepository;
 use crate::server::coupons_controller::CouponsController;
+use futures::future::Future;
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
@@ -124,9 +125,10 @@ impl Server {
         let (tx, rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
         let mut rabbbit = RabbitSender::new(&self.config.rabbit_url, rx)
             .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;
-        std::thread::spawn(move || {
-            rabbbit.start();
-        });
+        actix::spawn(
+            actix_web::web::block(move || Result::<(), actix_web::error::BlockingError<()>>::Ok(rabbbit.start()))
+                .map_err(|_| ())
+        );
         let message_sender = MessageSender::new(tx.clone());
         let message_listener = MessageListener::new(&self.config.rabbit_url, OrganizationRepository::new(Rc::new(pool.get().unwrap())))
             .map_err(|e| std::io::Error::new(ErrorKind::ConnectionAborted, e))?;

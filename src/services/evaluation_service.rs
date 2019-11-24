@@ -27,7 +27,8 @@ impl EvaluationServices {
         Self { promotions_repo, message_sender, coupon_uses_repo, coupon_repo, appkey_repo, transaction_repo }
     }
 
-    pub fn evaluate_promotion(&self, code: String, specific_data: EvaluationSpecificDto, attributes: HashMap<String, f64>, token: String, org: String) -> ApiResult<EvaluationResultDto> {
+    pub fn evaluate_promotion(&self, code: String, specific_data: EvaluationSpecificDto, attributes: HashMap<String, f64>, token: String) -> ApiResult<EvaluationResultDto> {
+        let org = self.appkey_repo.find_organization_by_token(&token)?;
         let promotion = self.promotions_repo.find_by_code(&code, &org)?;
         self.appkey_repo.validate_token_permits_promotion(&promotion, token)?;
         self.validate_promotion_is_active(&promotion)?;
@@ -43,12 +44,13 @@ impl EvaluationServices {
         let res = if eval_result {
             self.after_successful_evaluation_update(promotion.clone(), &specific_data)?;
             EvaluationResultDto::Applies {
+                promotion_id: promotion.id,
                 organization_id,
                 return_type: return_type.to_string(),
                 total_discount: self.calculate_total_discount(total, promotion.get_return())?,
             }
         } else {
-            EvaluationResultDto::DoesntApply { organization_id }
+            EvaluationResultDto::DoesntApply { organization_id, promotion_id: promotion.id }
         };
 
         Ok(res)
@@ -155,6 +157,6 @@ pub enum RequiredAttribute {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 pub enum EvaluationResultDto {
-    Applies { organization_id: String, total_discount: f64, return_type: String },
-    DoesntApply { organization_id: String },
+    Applies { organization_id: String, total_discount: f64, return_type: String, promotion_id: i32 },
+    DoesntApply { organization_id: String, promotion_id: i32 },
 }

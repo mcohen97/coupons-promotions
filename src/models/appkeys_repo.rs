@@ -85,4 +85,12 @@ impl AppKeyRepo {
         )
     }
 
+    pub fn find_organization_by_token(&self, token_: &str) -> ApiResult<String> {
+        Ok(appkeys
+            .select(organization_id)
+            .filter(token.eq(token_))
+            .first(&*self.conn)?
+        )
+    }
+
 }

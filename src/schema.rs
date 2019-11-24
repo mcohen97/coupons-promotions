@@ -3,6 +3,7 @@ table! {
         promotion_id -> Int4,
         token -> Varchar,
         organization_id -> Varchar,
+        name -> Varchar,
     }
 }
 

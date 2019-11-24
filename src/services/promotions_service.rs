@@ -1,5 +1,5 @@
 use crate::models::{PromotionRepository, OrganizationRepository, NewPromotion, Promotion};
-use crate::server::{ApiResult, ApiError, PromotionIn, Pagination, PromotionQueries};
+use crate::server::{ApiResult, ApiError, PromotionIn, Pagination, PromotionQueries, PromotionUpdateIn};
 use crate::messages::{MessageSender, Message};
 
 pub struct PromotionService {
@@ -48,12 +48,12 @@ impl PromotionService {
         )
     }
 
-    pub fn update(&self, id: i32, data: PromotionIn, org: String) -> ApiResult<Promotion> {
+    pub fn update(&self, id: i32, data: PromotionUpdateIn, org: String) -> ApiResult<Promotion> {
         let mut promotion = self.promotions_repo.find(id, &org)?;
         self.validate_organization_exists(&promotion.organization_id)?;
 
-        let PromotionIn { name, code, return_type, return_value, promotion_type, expiration, condition } = data;
-        promotion = Promotion { name, code: code.to_lowercase(), return_type: return_type.to_string(), return_value, type_: promotion_type.to_string(), organization_id: org, expiration, condition, ..promotion };
+        let PromotionUpdateIn { name, code, return_type, return_value, expiration, condition } = data;
+        promotion = Promotion { name, code, condition ,return_type: return_type.to_string(), return_value, organization_id: org, expiration, ..promotion };
         self.promotions_repo.update(&promotion)?;
 
         self.message_sender.send(Message::PromotionUpdate(promotion.clone()));

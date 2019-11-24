@@ -33,6 +33,16 @@ pub struct PromotionIn {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PromotionUpdateIn {
+    pub code: String,
+    pub name: String,
+    pub condition: String,
+    pub return_type: ReturnTypesIn,
+    pub return_value: f64,
+    pub expiration: DateTime,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum ReturnTypesIn {
     Percentage,

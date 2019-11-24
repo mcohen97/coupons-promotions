@@ -2,7 +2,7 @@ use crate::models::{Connection, Promotion, NewPromotion};
 use crate::server::{ApiResult, ApiError, Pagination, PromotionQueries};
 use diesel::prelude::*;
 use crate::schema::promotions::dsl::promotions;
-use crate::schema::promotions::columns::{code, active, organization_id, name, type_};
+use crate::schema::promotions::columns::{code, active, organization_id, name, type_, deleted};
 use std::rc::Rc;
 
 #[derive(Clone)]
@@ -20,6 +20,7 @@ impl PromotionRepository {
         let (name_, code_, promotion_type, active_) = query_params.into_params();
         let mut query = promotions
             .into_boxed()
+            .filter(deleted.eq(false))
             .filter(organization_id.eq(org_id))
             .offset(offset)
             .limit(limit);
@@ -46,6 +47,7 @@ impl PromotionRepository {
     pub fn find(&self, id: i32, org_id: &str) -> ApiResult<Promotion> {
         Ok(promotions
             .filter(organization_id.eq(org_id))
+            .filter(deleted.eq(false))
             .find(id)
             .first::<Promotion>(&*self.conn)?
         )
@@ -55,6 +57,7 @@ impl PromotionRepository {
         Ok(promotions
             .filter(organization_id.eq(org_id))
             .filter(code.eq(code_))
+            .filter(deleted.eq(false))
             .first::<Promotion>(&*self.conn)?
         )
     }
@@ -72,14 +75,23 @@ impl PromotionRepository {
     }
 
     pub fn update(&self, promo: &Promotion) -> ApiResult<()> {
-        let _result: Promotion = diesel::update(promotions)
+        let find = promotions.filter(deleted.eq(false)).find(promo.id);
+        let res: QueryResult<Promotion> = diesel::update(find)
             .set(promo)
-            .get_result(&*self.conn)?;
-        Ok(())
+            .get_result(&*self.conn);
+
+        match res {
+            Ok(_) => Ok(()),
+            Err(diesel::result::Error::DatabaseError(diesel::result::DatabaseErrorKind::UniqueViolation, _)) => Err(ApiError::from("Code was already taken")),
+            Err(e) => Err(ApiError::from(e))
+        }
     }
 
     pub fn delete(&self, id: i32, org_id: &str) -> ApiResult<bool> {
         let find = promotions.filter(organization_id.eq(org_id)).find(id);
+        diesel::update(find)
+            .set(deleted.eq(true))
+            .execute(&*self.conn)?;
         diesel::update(find)
             .set(active.eq(false))
             .execute(&*self.conn)?;

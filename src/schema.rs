@@ -44,6 +44,7 @@ table! {
         type_ -> Varchar,
         organization_id -> Varchar,
         expiration -> Timestamptz,
+        deleted -> Bool,
     }
 }
 

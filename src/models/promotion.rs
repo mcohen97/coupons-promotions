@@ -15,6 +15,7 @@ pub struct Promotion {
     pub type_: String,
     pub organization_id: String,
     pub expiration: DateTime,
+    pub deleted: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]

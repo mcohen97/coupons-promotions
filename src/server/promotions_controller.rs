@@ -1,5 +1,5 @@
 use actix_web::{web, HttpResponse};
-use crate::server::{ApiResult, ServiceFactory, PaginationIn, PromotionQueries};
+use crate::server::{ApiResult, ServiceFactory, PaginationIn, PromotionQueries, PromotionUpdateIn};
 use actix_web::web::{Json, Data};
 
 use crate::server::model_in::PromotionIn;
@@ -42,7 +42,7 @@ impl PromotionsController {
         Ok(HttpResponse::Created().json(created))
     }
 
-    pub fn put(id: web::Path<i32>, data: Json<PromotionIn>, services: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
+    pub fn put(id: web::Path<i32>, data: Json<PromotionUpdateIn>, services: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
         let org = Authorization::validate(&auth, &PUT_PERMS)?;
         let service = services.as_services()?.promotions;
         let updated = service.update(id.into_inner(), data.into_inner(), org)?;

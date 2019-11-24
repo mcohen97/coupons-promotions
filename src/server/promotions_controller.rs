@@ -1,5 +1,5 @@
 use actix_web::{web, HttpResponse};
-use crate::server::{ApiResult, ServiceFactory, PaginationIn};
+use crate::server::{ApiResult, ServiceFactory, PaginationIn, PromotionQueries};
 use actix_web::web::{Json, Data};
 
 use crate::server::model_in::PromotionIn;
@@ -17,6 +17,23 @@ lazy_static! {
 }
 
 impl PromotionsController {
+    pub fn get_all(services: Data<ServiceFactory>, auth: Option<Authorization>, pag: Query<PaginationIn>, query: Query<PromotionQueries>) -> ApiResult<HttpResponse> {
+        let org = Authorization::validate(&auth, &GET_PERMS)?;
+        let pag = Pagination::get_or_default(pag);
+        let service = services.as_services()?.promotions;
+        let promotion = service.get_all(org, pag, query.into_inner())?;
+
+        Ok(HttpResponse::Ok().json(&promotion))
+    }
+
+    pub fn get(id: web::Path<i32>, services: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
+        let org = Authorization::validate(&auth, &GET_PERMS)?;
+        let service = services.as_services()?.promotions;
+        let promotion = service.get(id.into_inner(), org)?;
+
+        Ok(HttpResponse::Ok().json(&promotion))
+    }
+
     pub fn post(data: Json<PromotionIn>, services: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
         let org = Authorization::validate(&auth, &POST_PERMS)?;
         let service = services.as_services()?.promotions;
@@ -39,22 +56,5 @@ impl PromotionsController {
         service.delete(id.into_inner(), org)?;
 
         Ok(HttpResponse::Ok().finish())
-    }
-
-    pub fn get(id: web::Path<i32>, services: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
-        let org = Authorization::validate(&auth, &GET_PERMS)?;
-        let service = services.as_services()?.promotions;
-        let promotion = service.get(id.into_inner(), org)?;
-
-        Ok(HttpResponse::Ok().json(&promotion))
-    }
-
-    pub fn get_all(pag: Query<PaginationIn>, services: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
-        let org = Authorization::validate(&auth, &GET_PERMS)?;
-        let pag = Pagination::get_or_default(pag);
-        let service = services.as_services()?.promotions;
-        let promotion = service.get_all(pag.offset, pag.limit, org)?;
-
-        Ok(HttpResponse::Ok().json(&promotion))
     }
 }

@@ -4,7 +4,7 @@ use crate::schema::appkeys::columns::*;
 use diesel::prelude::*;
 use std::rc::Rc;
 use crate::models::{Promotion, AppKey};
-use crate::server::{ApiResult, ApiError};
+use crate::server::{ApiResult, ApiError, Pagination};
 
 #[derive(Clone)]
 pub struct AppKeyRepo {
@@ -65,7 +65,8 @@ impl AppKeyRepo {
         }
     }
 
-    pub fn get_all(&self, org_id: &str, offset: i64, limit: i64) -> ApiResult<Vec<AppKey>> {
+    pub fn get_all(&self, org_id: &str, pag: Pagination) -> ApiResult<Vec<AppKey>> {
+        let Pagination { offset, limit } = pag;
         Ok(appkeys
             .filter(organization_id.eq(org_id))
             .offset(offset)
@@ -74,7 +75,7 @@ impl AppKeyRepo {
         )
     }
 
-    pub fn get_promotions_by_token(&self,token_: &str ,org_id: &str) -> ApiResult<Vec<i32>> {
+    pub fn get_promotions_by_token(&self, token_: &str, org_id: &str) -> ApiResult<Vec<i32>> {
         appkeys.filter(token.eq(token_)).first::<AppKey>(&*self.conn)?;
 
         Ok(appkeys
@@ -92,5 +93,4 @@ impl AppKeyRepo {
             .first(&*self.conn)?
         )
     }
-
 }

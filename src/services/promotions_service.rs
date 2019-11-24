@@ -1,5 +1,5 @@
 use crate::models::{PromotionRepository, OrganizationRepository, NewPromotion, Promotion};
-use crate::server::{ApiResult, ApiError, PromotionIn};
+use crate::server::{ApiResult, ApiError, PromotionIn, Pagination, PromotionQueries};
 use crate::messages::{MessageSender, Message};
 
 pub struct PromotionService {
@@ -19,8 +19,8 @@ impl PromotionService {
         Ok(promo)
     }
 
-    pub fn get_all(&self, offset: i64, limit: i64, org: String) -> ApiResult<Vec<Promotion>> {
-        let promos = self.promotions_repo.get(offset, limit, &org)?;
+    pub fn get_all(&self,org: String, pag: Pagination, query: PromotionQueries) -> ApiResult<Vec<Promotion>> {
+        let promos = self.promotions_repo.get(&org, pag, query)?;
 
         Ok(promos)
     }

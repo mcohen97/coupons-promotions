@@ -1,8 +1,8 @@
 use crate::models::{Connection, Promotion, NewPromotion};
-use crate::server::{ApiResult, ApiError};
+use crate::server::{ApiResult, ApiError, Pagination, PromotionQueries};
 use diesel::prelude::*;
 use crate::schema::promotions::dsl::promotions;
-use crate::schema::promotions::columns::{code, active, organization_id};
+use crate::schema::promotions::columns::{code, active, organization_id, name, type_};
 use std::rc::Rc;
 
 #[derive(Clone)]
@@ -15,14 +15,32 @@ impl PromotionRepository {
         PromotionRepository { conn }
     }
 
-    pub fn get(&self, offset: i64, limit: i64, org_id: &str) -> ApiResult<Vec<Promotion>> {
+    pub fn get(&self, org_id: &str, pag: Pagination, query_params: PromotionQueries) -> ApiResult<Vec<Promotion>> {
+        let Pagination { offset, limit } = pag;
+        let (name_, code_, promotion_type, active_) = query_params.into_params();
+        let mut query = promotions
+            .into_boxed()
+            .filter(organization_id.eq(org_id))
+            .offset(offset)
+            .limit(limit);
 
-        Ok(promotions
-                .filter(organization_id.eq(org_id))
-                .offset(offset)
-                .limit(limit)
-                .load(&*self.conn)?
-        )
+        if let Some(name_) = name_ {
+            query = query.filter(name.like(name_));
+        }
+
+        if let Some(code_) = code_ {
+            query = query.filter(code.like(code_));
+        }
+
+        if let Some(promotion_type) = promotion_type {
+            query = query.filter(type_.like(promotion_type));
+        }
+
+        if let Some(active_) = active_ {
+            query = query.filter(active.eq(active_));
+        }
+
+        Ok(query.load(&*self.conn)?)
     }
 
     pub fn find(&self, id: i32, org_id: &str) -> ApiResult<Promotion> {

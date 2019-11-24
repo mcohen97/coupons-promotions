@@ -78,3 +78,30 @@ impl Pagination {
         Pagination { offset, limit }
     }
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct PromotionQueries {
+    name: Option<String>,
+    code: Option<String>,
+    promotion_type: Option<String>,
+    active: Option<bool>,
+}
+
+impl PromotionQueries {
+    pub fn into_params(self) -> (Option<String>, Option<String>, Option<String>, Option<bool>) {
+        (
+            Self::format_param(self.name),
+            Self::format_param(self.code),
+            Self::format_param(self.promotion_type),
+            self.active
+        )
+    }
+
+    fn format_param(param: Option<String>) -> Option<String> {
+        if let Some(param) = param {
+            Some(format!("{}%", param))
+        } else {
+            None
+        }
+    }
+}

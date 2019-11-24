@@ -28,7 +28,7 @@ impl AppKeyController {
         let service = fact.as_services()?.appkey_repo;
         let pag = Pagination::get_or_default(pag);
         let res: Vec<String> = service
-            .get_all(&org, pag.offset, pag.limit)?
+            .get_all(&org, pag)?
             .into_iter()
             .map(|key| key.token)
             .collect();

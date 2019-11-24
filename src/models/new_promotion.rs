@@ -1,11 +1,12 @@
 use crate::schema::promotions;
 use crate::models::{PromotionReturn, PromotionType, DateTime};
 
-#[derive(Insertable, Deserialize)]
+#[derive(Insertable, Deserialize, Debug)]
 #[table_name = "promotions"]
 pub struct NewPromotion {
     pub code: String,
     pub name: String,
+    pub condition: String,
     pub active: bool,
     pub return_type: String,
     pub return_value: f64,
@@ -18,6 +19,7 @@ impl NewPromotion {
     pub fn new(
         name: String,
         code: String,
+        condition: String,
         active: bool,
         p_return: PromotionReturn,
         p_type: PromotionType,
@@ -33,6 +35,6 @@ impl NewPromotion {
             PromotionType::Discount => "discount".into()
         };
 
-        NewPromotion { name, code, active, return_value, return_type, type_, organization_id, expiration }
+        NewPromotion { name, condition, code, active, return_value, return_type, type_, organization_id, expiration }
     }
 }

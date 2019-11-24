@@ -30,19 +30,18 @@ impl PromotionService {
     pub fn create(&self, promotion: PromotionIn, org: String) -> ApiResult<Promotion> {
         self.validate_organization_exists(&org)?;
         let new_promotion = Self::build_new_promotion(promotion, org);
-
         let created = self.promotions_repo.create(&new_promotion)?;
         self.message_sender.send(Message::PromotionCreated(created.clone()));
-
         Ok(created)
     }
 
     fn build_new_promotion(data: PromotionIn, org: String) -> NewPromotion {
-        let PromotionIn { name, code, return_type, return_value, promotion_type, expiration } = data;
+        let PromotionIn { name, code, return_type, return_value, promotion_type, expiration, condition } = data;
         let ret = return_type.get_return(return_value);
         NewPromotion::new(
             name,
             code.to_lowercase(),
+            condition,
             true,
             ret,
             promotion_type,
@@ -55,8 +54,8 @@ impl PromotionService {
         let mut promotion = self.promotions_repo.find(id, &org)?;
         self.validate_organization_exists(&promotion.organization_id)?;
 
-        let PromotionIn { name, code, return_type, return_value, promotion_type, expiration } = data;
-        promotion = Promotion { name, code: code.to_lowercase(), return_type: return_type.to_string(), return_value, type_: promotion_type.to_string(), organization_id: org, expiration, ..promotion };
+        let PromotionIn { name, code, return_type, return_value, promotion_type, expiration, condition } = data;
+        promotion = Promotion { name, code: code.to_lowercase(), return_type: return_type.to_string(), return_value, type_: promotion_type.to_string(), organization_id: org, expiration, condition, ..promotion };
         self.promotions_repo.update(&promotion)?;
 
         self.message_sender.send(Message::PromotionUpdate(promotion.clone()));

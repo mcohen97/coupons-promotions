@@ -15,28 +15,28 @@ lazy_static! {
 
 pub struct EvaluationController;
 impl EvaluationController {
-    pub fn post(path: web::Path<i32>, data: Json<EvaluationIn>, fact: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
+    pub fn post(path: web::Path<String>, data: Json<EvaluationIn>, fact: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
         let org = Authorization::validate(&auth, &POST_PERMS)?;
         let start = std::time::SystemTime::now();
-        let id = path.into_inner();
+        let code = path.into_inner();
         let Services { evaluation, demographic, message_sender, .. } = fact.as_services()?;
         let EvaluationIn { attributes, demography, specific_data , token} = data.into_inner();
 
-        let eval_result = evaluation.evaluate_promotion(id, specific_data, attributes, token, org)?;
+        let eval_result = evaluation.evaluate_promotion(code.clone(), specific_data, attributes, token, org)?;
         let response_time = start.elapsed().unwrap();
         let (demo_response, demo_data) = demographic.build_demographics_if_valid(demography);
-        message_sender.send(Message::PromotionEvaluated(eval_result.to_message(id, response_time, demo_data)));
+        message_sender.send(Message::PromotionEvaluated(eval_result.to_message(code, response_time, demo_data)));
 
         Ok(HttpResponse::Ok().json(eval_result.to_out(demo_response.to_string())))
     }
 }
 
 impl EvaluationResultDto {
-    pub fn to_message(&self, promotion_id: i32, response_time: Duration, demographic_data: Option<DemographyData>) -> messages::EvaluationResult {
+    pub fn to_message(&self, code: String, response_time: Duration, demographic_data: Option<DemographyData>) -> messages::EvaluationResult {
         match self {
             EvaluationResultDto::Applies { organization_id, total_discount, .. } => messages::EvaluationResult {
                 organization_id: organization_id.to_string(),
-                promotion_id,
+                code,
                 demographic_data,
                 result: EvaluationInfo {
                     total_discounted: Some(*total_discount),
@@ -46,7 +46,7 @@ impl EvaluationResultDto {
             },
             EvaluationResultDto::DoesntApply { organization_id } => messages::EvaluationResult {
                 organization_id: organization_id.to_string(),
-                promotion_id,
+                code,
                 demographic_data,
                 result: EvaluationInfo {
                     total_discounted: None,

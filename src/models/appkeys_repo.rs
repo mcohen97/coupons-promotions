@@ -75,6 +75,8 @@ impl AppKeyRepo {
     }
 
     pub fn get_promotions_by_token(&self,token_: &str ,org_id: &str) -> ApiResult<Vec<i32>> {
+        appkeys.filter(token.eq(token_)).first::<AppKey>(&*self.conn)?;
+
         Ok(appkeys
             .select(promotion_id)
             .filter(organization_id.eq(org_id))
@@ -82,4 +84,5 @@ impl AppKeyRepo {
             .load(&*self.conn)?
         )
     }
+
 }

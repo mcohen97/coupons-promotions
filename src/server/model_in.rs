@@ -25,6 +25,7 @@ pub struct EvaluationOut {
 pub struct PromotionIn {
     pub code: String,
     pub name: String,
+    pub condition: String,
     pub return_type: ReturnTypesIn,
     pub return_value: f64,
     pub promotion_type: PromotionType,

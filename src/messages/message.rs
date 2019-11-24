@@ -27,7 +27,7 @@ impl Message {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EvaluationResult {
-    pub promotion_id: i32,
+    pub code: String,
     pub organization_id: String,
     pub result: EvaluationInfo,
     #[serde(skip_serializing_if = "Option::is_none")]

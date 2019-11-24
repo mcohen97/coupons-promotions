@@ -6,6 +6,7 @@ use crate::models::DateTime;
 pub struct Promotion {
     pub id: i32,
     pub code: String,
+    pub condition: String,
     pub name: String,
     pub active: bool,
     pub return_type: String,

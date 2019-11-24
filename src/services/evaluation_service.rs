@@ -27,8 +27,8 @@ impl EvaluationServices {
         Self { promotions_repo, message_sender, coupon_uses_repo, coupon_repo, appkey_repo, transaction_repo }
     }
 
-    pub fn evaluate_promotion(&self, promotion_id: i32, specific_data: EvaluationSpecificDto, attributes: HashMap<String, f64>, token: String, org: String) -> ApiResult<EvaluationResultDto> {
-        let promotion = self.promotions_repo.find(promotion_id, &org)?;
+    pub fn evaluate_promotion(&self, code: String, specific_data: EvaluationSpecificDto, attributes: HashMap<String, f64>, token: String, org: String) -> ApiResult<EvaluationResultDto> {
+        let promotion = self.promotions_repo.find_by_code(&code, &org)?;
         self.appkey_repo.validate_token_permits_promotion(&promotion, token)?;
         self.validate_promotion_is_active(&promotion)?;
         self.validate_specific_data(&promotion, &specific_data)?;
@@ -36,7 +36,7 @@ impl EvaluationServices {
 
         let total = attributes.get("total").map(|v| v.to_owned());
         let return_type = &promotion.return_type;
-        let expr = PromotionExpression::parse(&promotion.code)?;
+        let expr = PromotionExpression::parse(&promotion.condition)?;
         let eval_result = expr.evaluate(attributes)?;
 
         let organization_id = (&promotion.organization_id).to_string();

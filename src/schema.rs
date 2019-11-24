@@ -35,6 +35,7 @@ table! {
     promotions (id) {
         id -> Int4,
         code -> Varchar,
+        condition -> Varchar,
         name -> Varchar,
         active -> Bool,
         return_type -> Varchar,

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use evalexpr::{build_operator_tree, Node, Context, HashMapContext, Value};
-use crate::server::ApiResult;
+use crate::server::{ApiResult, ApiError};
 
 pub struct PromotionExpression {
     ast: Node
@@ -22,16 +22,33 @@ impl PromotionExpression {
             .replace("or", "||")
     }
 
-    pub fn evaluate<T>(&self, attributes: HashMap<T, f64>) -> ApiResult<bool> where T: Into<String> {
+    pub fn evaluate(&self, attributes: HashMap<String, f64>) -> ApiResult<bool>  {
+
         let mut context = HashMapContext::new();
         for (key, val) in attributes {
-            context.set_value(key.into(), val.into())?;
+            context.set_value(key, val.into())?;
         }
         context.set_value("valid_coupon_code".into(), Value::Boolean(true))?;
         context.set_value("valid_transaction".into(), Value::Boolean(true))?;
 
         let result = self.ast.eval_boolean_with_context_mut(&mut context)?;
         Ok(result)
+    }
+
+    fn validate_attributes(&self, attributes: &HashMap<String, f64>) -> ApiResult<()>  {
+        if let Some(&product_size) = attributes.get("product_size") {
+            if product_size < 0.0 { return Err(ApiError::from("Product size must be positive"))}
+        }
+
+        if let Some(&total) = attributes.get("total") {
+            if total < 0.0 { return Err(ApiError::from("Total must be positive"))}
+        }
+
+        if let Some(&quantity) = attributes.get("quantity") {
+            if quantity < 0.0 { return Err(ApiError::from("Quantity must be positive"))}
+        }
+
+        Ok(())
     }
 }
 

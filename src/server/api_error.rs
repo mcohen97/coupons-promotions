@@ -1,17 +1,41 @@
-use actix_web::{HttpResponse};
+use actix_web::HttpResponse;
 use actix_web::ResponseError;
 use iata_types::CityCodeParseError;
 use evalexpr::EvalexprError;
 use std::borrow::Cow;
 use std::error::Error;
-use derive_more::Display;
 use std::fmt::Display;
+use std::collections::HashMap;
 
 type Message = Cow<'static, str>;
 
-#[derive(Debug, Serialize, Deserialize, Display)]
+#[derive(Debug, Serialize, Deserialize)]
 struct ErrorJson {
     error: Cow<'static, str>
+}
+
+#[derive(Debug, Serialize)]
+pub struct InvalidFieldJson {
+    #[serde(flatten)]
+    m: HashMap<String, String>
+}
+
+impl InvalidFieldJson {
+    pub fn new(field: &str, reason: &str) -> InvalidFieldJson {
+        let mut m = HashMap::new();
+        m.insert(field.to_string(), reason.to_string());
+        InvalidFieldJson { m }
+    }
+
+    pub fn get_json(&self) -> String {
+        let (field, reason) = self.m.iter().last().unwrap();
+        format!("{{\n {} : {}\n }}", field, reason)
+    }
+
+    pub fn get_message(&self) -> String {
+        let (field, reason) = self.m.iter().last().unwrap();
+        format!("Field {} is invalid: {}", field, reason)
+    }
 }
 
 impl ErrorJson {
@@ -21,20 +45,21 @@ impl ErrorJson {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize)]
 pub enum ApiError {
     BadRequest(Message),
+    BadRequestInvalidField(InvalidFieldJson),
     InternalError(Message),
-    Unauthorized
+    Unauthorized,
 }
 
 impl Into<HttpResponse> for ApiError {
     fn into(self) -> HttpResponse {
         match self {
             ApiError::BadRequest(msg) => HttpResponse::BadRequest().json(ErrorJson::from_message(msg)),
+            ApiError::BadRequestInvalidField(msg) => HttpResponse::BadRequest().json(msg),
             ApiError::InternalError(msg) => HttpResponse::InternalServerError().json(ErrorJson::from_message(msg)),
             ApiError::Unauthorized => HttpResponse::Unauthorized().json(ErrorJson::from_message("Unauthorized")),
-
         }
     }
 }
@@ -43,6 +68,7 @@ impl ResponseError for ApiError {
     fn error_response(&self) -> HttpResponse {
         match self {
             ApiError::BadRequest(msg) => HttpResponse::BadRequest().content_type("application/json").json(ErrorJson::from_message(msg.to_string())),
+            ApiError::BadRequestInvalidField(msg) => HttpResponse::BadRequest().json(msg),
             ApiError::InternalError(msg) => HttpResponse::InternalServerError().json(ErrorJson::from_message(msg.to_string())),
             ApiError::Unauthorized => HttpResponse::Unauthorized().json(ErrorJson::from_message("Unauthorized")),
         }
@@ -53,6 +79,7 @@ impl Display for ApiError {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
         match self {
             ApiError::BadRequest(msg) => f.write_str(&serde_json::to_string_pretty(&ErrorJson::from_message(msg.to_string())).unwrap()),
+            ApiError::BadRequestInvalidField(msg) => f.write_str(&serde_json::to_string_pretty(&msg).unwrap()),
             ApiError::InternalError(msg) => f.write_str(&serde_json::to_string_pretty(&ErrorJson::from_message(msg.to_string())).unwrap()),
             ApiError::Unauthorized => f.write_str(&serde_json::to_string_pretty(&ErrorJson::from_message("Unauthorized")).unwrap())
         }
@@ -115,7 +142,12 @@ impl ApiError {
         match self {
             ApiError::InternalError(m) => m.clone(),
             ApiError::BadRequest(m) => m.clone(),
+            ApiError::BadRequestInvalidField(m) => m.get_message().into(),
             ApiError::Unauthorized => "Unauthorized".into()
         }
+    }
+
+    pub fn invalid_field(field: &str, reason: &str) -> ApiError {
+        ApiError::BadRequestInvalidField(InvalidFieldJson::new(field, reason))
     }
 }

@@ -1,5 +1,5 @@
 use crate::models::{PromotionRepository, OrganizationRepository, NewPromotion, Promotion};
-use crate::server::{ApiResult, ApiError, PromotionIn, Pagination, PromotionQueries, PromotionUpdateIn};
+use crate::server::{ApiResult, ApiError, PromotionIn, Pagination, PromotionQueries, PromotionUpdateIn, ReturnTypesIn};
 use crate::messages::{MessageSender, Message};
 
 pub struct PromotionService {
@@ -19,7 +19,7 @@ impl PromotionService {
         Ok(promo)
     }
 
-    pub fn get_all(&self,org: String, pag: Pagination, query: PromotionQueries) -> ApiResult<Vec<Promotion>> {
+    pub fn get_all(&self, org: String, pag: Pagination, query: PromotionQueries) -> ApiResult<Vec<Promotion>> {
         let promos = self.promotions_repo.get(&org, pag, query)?;
 
         Ok(promos)
@@ -27,6 +27,7 @@ impl PromotionService {
 
     pub fn create(&self, promotion: PromotionIn, org: String) -> ApiResult<Promotion> {
         self.validate_organization_exists(&org)?;
+        self.validate_promotion_in(&promotion)?;
         let new_promotion = Self::build_new_promotion(promotion, org);
         let created = self.promotions_repo.create(&new_promotion)?;
         self.message_sender.send(Message::PromotionCreated(created.clone()));
@@ -51,9 +52,10 @@ impl PromotionService {
     pub fn update(&self, id: i32, data: PromotionUpdateIn, org: String) -> ApiResult<Promotion> {
         let mut promotion = self.promotions_repo.find(id, &org)?;
         self.validate_organization_exists(&promotion.organization_id)?;
+        self.validate_promotion_update_in(&data)?;
 
         let PromotionUpdateIn { name, code, return_type, return_value, expiration, condition } = data;
-        promotion = Promotion { name, code, condition ,return_type: return_type.to_string(), return_value, organization_id: org, expiration, ..promotion };
+        promotion = Promotion { name, code, condition, return_type: return_type.to_string(), return_value, organization_id: org, expiration, ..promotion };
         self.promotions_repo.update(&promotion)?;
 
         self.message_sender.send(Message::PromotionUpdate(promotion.clone()));
@@ -75,5 +77,33 @@ impl PromotionService {
         } else {
             Ok(())
         }
+    }
+
+    fn validate_promotion_in(&self, promotion: &PromotionIn) -> ApiResult<()> {
+        if promotion.return_type == ReturnTypesIn::Percentage {
+            if promotion.return_value < 0.0 || promotion.return_value > 100.0 {
+                return Err(ApiError::invalid_field("return_value", "Must be in between 0 and 100"));
+            }
+        } else {
+            if promotion.return_value < 0.0 {
+                return Err(ApiError::invalid_field("return_value", "The fixed return value must be positive"));
+            }
+        }
+
+        Ok(())
+    }
+
+    fn validate_promotion_update_in(&self, promotion: &PromotionUpdateIn) -> ApiResult<()> {
+        if promotion.return_type == ReturnTypesIn::Percentage {
+            if promotion.return_value < 0.0 || promotion.return_value > 100.0 {
+                return Err(ApiError::invalid_field("return_value", "Must be in between 0 and 100"));
+            }
+        } else {
+            if promotion.return_value < 0.0 {
+                return Err(ApiError::invalid_field("return_value", "The fixed return value must be positive"));
+            }
+        }
+
+        Ok(())
     }
 }

@@ -42,7 +42,7 @@ pub struct PromotionUpdateIn {
     pub expiration: DateTime,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum ReturnTypesIn {
     Percentage,

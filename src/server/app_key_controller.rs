@@ -42,6 +42,14 @@ impl AppKeyController {
 
         Ok(HttpResponse::Ok().json(token))
     }
+
+    pub fn delete(token: Path<String>, fact: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
+        let org = Authorization::validate(&auth, &POST_PERMS)?;
+        let service = fact.as_services()?.appkey_repo;
+        service.delete_token(&token.into_inner(), &org)?;
+
+        Ok(HttpResponse::Ok().finish())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

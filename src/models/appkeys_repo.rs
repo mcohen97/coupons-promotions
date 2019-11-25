@@ -38,8 +38,7 @@ impl AppKeyRepo {
 
         if let Err(diesel::NotFound) = query {
             Ok(())
-        }
-        else {
+        } else {
             Err(ApiError::from("App key name taken"))
         }
     }
@@ -98,6 +97,7 @@ impl AppKeyRepo {
             .map(|k| self.build(k))
             .collect::<ApiResult<Vec<AppKeyOut>>>()?)
     }
+
     fn build(&self, key: AppKey) -> ApiResult<AppKeyOut> {
         let promotions_ = self.get_promotions_by_token(&key.token, &key.organization_id)?;
         Ok(AppKeyOut {
@@ -117,7 +117,6 @@ impl AppKeyRepo {
         )
     }
 
-
     pub fn get_promotions_by_token(&self, token_: &str, org_id: &str) -> ApiResult<Vec<i32>> {
         appkeys.filter(token.eq(token_)).first::<AppKey>(&*self.conn)?;
 
@@ -135,5 +134,14 @@ impl AppKeyRepo {
             .filter(token.eq(token_))
             .first(&*self.conn)?
         )
+    }
+
+    pub fn delete_token(&self, token_: &str, org: &str) -> ApiResult<()> {
+        let source = appkeys
+            .filter(token.eq(token_))
+            .filter(organization_id.eq(org));
+        diesel::delete(source).execute(&*self.conn)?;
+
+        Ok(())
     }
 }

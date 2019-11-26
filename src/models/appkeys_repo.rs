@@ -144,4 +144,22 @@ impl AppKeyRepo {
 
         Ok(())
     }
+
+    pub fn update(&self, name_: &str, token_: &str, org: &str, promos: Vec<i32>) -> ApiResult<AppKeyOut> {
+        let og_name = self.get_name(token_, org)?;
+        if name_ != og_name {
+            self.validate_name_not_taken(org, name_)?;
+        }
+        self.validate_promotions(&promos, org)?;
+        self.delete_token(token_, org)?;
+
+        self.conn.transaction(|| {
+            promos.iter()
+                .map(|&p| AppKey { promotion_id: p, token: token_.to_string(), organization_id: org.to_string(), name: name_.to_string() })
+                .map(|p| self.insert_keys(p))
+                .collect::<ApiResult<()>>()
+        })?;
+
+        Ok(AppKeyOut { name: name_.to_string(), organization_id: org.to_string(), token: token_.to_string(), promotions: promos })
+    }
 }

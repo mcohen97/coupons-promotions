@@ -94,6 +94,7 @@ impl Server {
                                 .service(
                                     web::resource("{token}")
                                         .route(web::get().to(AppKeyController::get))
+                                        .route(web::put().to(AppKeyController::put))
                                         .route(web::delete().to(AppKeyController::delete))
                                 )
                         )

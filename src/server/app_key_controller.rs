@@ -43,6 +43,15 @@ impl AppKeyController {
         Ok(HttpResponse::Ok().json(token))
     }
 
+    pub fn put(data: Json<NewAppkeyIn>, token: Path<String>, fact: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
+        let org = Authorization::validate(&auth, &POST_PERMS)?;
+        let NewAppkeyIn {name, promotions} = data.into_inner();
+        let service = fact.as_services()?.appkey_repo;
+        let res = service.update(&name, &token.into_inner(),&org, promotions)?;
+
+        Ok(HttpResponse::Ok().json(res))
+    }
+
     pub fn delete(token: Path<String>, fact: Data<ServiceFactory>, auth: Option<Authorization>) -> ApiResult<HttpResponse> {
         let org = Authorization::validate(&auth, &POST_PERMS)?;
         let service = fact.as_services()?.appkey_repo;

@@ -19,9 +19,10 @@ impl AppKeyController {
         let org = Authorization::validate(&auth, &GET_PERMS)?;
         let service = fact.as_services()?.appkey_repo;
         let promotions = service.get_promotions_by_token(&token, &org)?;
+        let promo_names = service.get_promotions_codes_from_ids(&promotions)?;
         let name = service.get_name(&token, &org)?;
 
-        Ok(HttpResponse::Ok().json(AppKeyOut { token, promotions, organization_id: org, name }))
+        Ok(HttpResponse::Ok().json(AppKeyOut { token, promotion_ids: promotions, organization_id: org, name, promotion_names: promo_names }))
     }
 
     pub fn get_all(fact: Data<ServiceFactory>, auth: Option<Authorization>, pag: Query<PaginationIn>) -> ApiResult<HttpResponse> {

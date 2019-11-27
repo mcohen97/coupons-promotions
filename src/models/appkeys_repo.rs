@@ -1,5 +1,6 @@
 use crate::schema::appkeys::dsl::appkeys;
 use crate::schema::promotions::dsl::promotions;
+use crate::schema::promotions::columns::{name as promo_name, id};
 use crate::schema::appkeys::columns::*;
 use diesel::prelude::*;
 use std::rc::Rc;
@@ -27,7 +28,7 @@ impl AppKeyRepo {
                 .collect::<ApiResult<()>>()
         })?;
 
-        Ok(AppKeyOut { token: token_, organization_id: org_id, name: name_, promotions: promos.to_vec() })
+        Ok(AppKeyOut { token: token_, organization_id: org_id, name: name_,promotion_names: self.get_promotions_codes_from_ids(promos)? ,promotion_ids: promos.to_vec() })
     }
 
     fn validate_name_not_taken(&self, org_id: &str, name_: &str) -> ApiResult<()> {
@@ -91,6 +92,7 @@ impl AppKeyRepo {
             .filter(organization_id.eq(org_id))
             .offset(offset)
             .limit(limit)
+            .distinct_on(token)
             .load(&*self.conn)?;
 
         Ok(keys.into_iter()
@@ -101,7 +103,8 @@ impl AppKeyRepo {
     fn build(&self, key: AppKey) -> ApiResult<AppKeyOut> {
         let promotions_ = self.get_promotions_by_token(&key.token, &key.organization_id)?;
         Ok(AppKeyOut {
-            promotions: promotions_,
+            promotion_names: self.get_promotions_codes_from_ids(&promotions_)?,
+            promotion_ids: promotions_,
             name: key.name,
             organization_id: key.organization_id,
             token: key.token,
@@ -160,6 +163,14 @@ impl AppKeyRepo {
                 .collect::<ApiResult<()>>()
         })?;
 
-        Ok(AppKeyOut { name: name_.to_string(), organization_id: org.to_string(), token: token_.to_string(), promotions: promos })
+        Ok(AppKeyOut { name: name_.to_string(), organization_id: org.to_string(), token: token_.to_string(), promotion_names: self.get_promotions_codes_from_ids(&promos)?, promotion_ids: promos })
+    }
+
+    pub fn get_promotions_codes_from_ids(&self, ids: &[i32]) -> ApiResult<Vec<String>> {
+        Ok(promotions
+            .select(promo_name)
+            .filter(id.eq_any(ids))
+            .load(&*self.conn)?
+        )
     }
 }

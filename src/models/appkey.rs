@@ -14,5 +14,6 @@ pub struct AppKeyOut {
     pub token: String,
     pub name: String,
     pub organization_id: String,
-    pub promotions: Vec<i32>
+    pub promotion_ids: Vec<i32>,
+    pub promotion_names: Vec<String>
 }

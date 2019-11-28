@@ -109,7 +109,7 @@ impl PromotionQueries {
 
     fn format_param(param: Option<String>) -> Option<String> {
         if let Some(param) = param {
-            Some(format!("{}%", param))
+            Some(format!("%{}%", param))
         } else {
             None
         }

@@ -67,7 +67,7 @@ mod tests {
     #[test]
     fn valid_discount_code() {
         let exp = discount_expression();
-        let attributes = hashmap!["total" => 10000.0, "quantity" => 4.0];
+        let attributes = hashmap!["total".to_string() => 10000.0, "quantity".to_string() => 4.0];
         let result = exp.evaluate(attributes).unwrap();
         assert!(result)
     }
@@ -75,7 +75,7 @@ mod tests {
     #[test]
     fn valid_discount_code_or() {
         let exp = discount_expression();
-        let attributes = hashmap!["total" => 250.0, "quantity" => 6.0];
+        let attributes = hashmap!["total".to_string() => 250.0, "quantity".to_string() => 6.0];
         let result = exp.evaluate(attributes).unwrap();
         assert!(result)
     }
@@ -83,7 +83,7 @@ mod tests {
     #[test]
     fn invalid_discount_code() {
         let exp = discount_expression();
-        let attributes = hashmap!["total" => 150.0, "quantity" => 2.0];
+        let attributes = hashmap!["total".to_string() => 150.0, "quantity".to_string() => 2.0];
         let result = exp.evaluate(attributes).unwrap();
         assert!(!result)
     }
@@ -91,7 +91,7 @@ mod tests {
     #[test]
     fn valid_coupon_code() {
         let exp = coupon_expression();
-        let attributes = hashmap!["total" => 101.0, "products_size" => 3.0];
+        let attributes = hashmap!["total".to_string() => 101.0, "products_size".to_string() => 3.0];
         let result = exp.evaluate(attributes).unwrap();
         assert!(result)
     }
@@ -99,7 +99,7 @@ mod tests {
     #[test]
     fn invalid_coupon_code() {
         let exp = coupon_expression();
-        let attributes = hashmap!["total" => 150.0, "products_size" => 1.0];
+        let attributes = hashmap!["total".to_string() => 150.0, "products_size".to_string() => 1.0];
         let result = exp.evaluate(attributes).unwrap();
         assert!(!result)
     }

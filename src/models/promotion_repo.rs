@@ -133,62 +133,38 @@ mod tests {
             .build(manager)
             .expect("Failed to create pool.");
         let conn = Rc::new(pool.get().unwrap());
+        let org = "TESTING PROMO";
         let repo = PromotionRepository::new(conn);
         let new_promo = build_promo();
 
         let promo = repo.create(&new_promo).unwrap();
         assert_ne!(0, promo.id);
 
-        let mut fetched = repo.find(promo.id).unwrap();
+        let mut fetched = repo.find(promo.id, "TESTING PROMO").unwrap();
         assert_eq!(promo, fetched);
         assert_eq!(promo.name, fetched.name);
 
         fetched.name = "Another name".into();
         repo.update(&fetched);
-        let fetched = repo.find(promo.id).unwrap();
+        let fetched = repo.find(promo.id, "TESTING PROMO").unwrap();
         assert_eq!("Another name", fetched.name);
 
-        let deleted = repo.delete(promo.id).unwrap();
-        assert!(deleted);
+        let deleted_ = repo.delete(promo.id, "TESTING PROMO").unwrap();
+        assert!(deleted_);
 
-        let still_exists = repo.find(promo.id).err().is_none();
+        let still_exists = repo.find(promo.id, "TESTING PROMO").err().is_none();
         assert!(!still_exists);
-    }
-
-    #[test]
-    fn create_many() {
-        dotenv::dotenv().ok();
-        let url = std::env::var("DATABASE_URL").unwrap();
-        let manager = ConnectionManager::<PgConnection>::new(url);
-        let pool: models::Pool = r2d2::Pool::builder()
-            .build(manager)
-            .expect("Failed to create pool.");
-        let conn = Rc::new(pool.get().unwrap());
-        let repo = PromotionRepository::new(conn);
-        let _new_promo = build_promo();
-
-        let created = vec![repo.create(&build_promo()).unwrap(); 10];
-        let fetched = repo.get().unwrap();
-
-        let fetched_same_as_created = created.iter().zip(fetched.iter())
-            .all(|(f, s)| f == s);
-        assert_eq!(true, fetched_same_as_created);
-
-        let all_deleted = fetched.iter().all(|p| repo.delete(p.id).unwrap());
-        assert_eq!(true, all_deleted);
-
-        let promos_left = repo.get().unwrap();
-        assert_eq!(0, promos_left.len());
     }
 
     fn build_promo() -> NewPromotion {
         NewPromotion::new(
-            "Promo".into(),
+            "Another name".into(),
+            "TestingCode_EWFEWFWEFewgew".into(),
             "if valid_transaction then apply_discount".into(),
             true,
             PromotionReturn::Percentage(10.0),
             PromotionType::Discount,
-            1,
+            "TESTING PROMO".into(),
             Utc::now(),
         )
     }

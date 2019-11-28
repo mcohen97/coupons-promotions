@@ -40,7 +40,7 @@ impl PromotionService {
         NewPromotion::new(
             name,
             code.to_lowercase(),
-            condition,
+            condition.to_lowercase(),
             true,
             ret,
             promotion_type,
